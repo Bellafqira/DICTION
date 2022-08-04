@@ -3,7 +3,7 @@
 *.png
 .idea
 data
-test_case.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
  *.py[cod]
