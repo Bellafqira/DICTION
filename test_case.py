@@ -39,13 +39,13 @@ config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia =\
 #  cf_resnet18_attack_ft, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_resnet18_attack_pia
 
 # --------------- Tests configuration ---------------
-# from tests.tests_train_models import Tests
+from tests.tests_train_models import Tests
 
 #  --------------- Main  ---------------
 if __name__ == '__main__':
     """Train networks"""
-    # Tests.gen_split_database(config_data)
-    # Tests.train_model_split(config_data, config_train)
+    Tests.gen_database(config_data)
+    Tests.train_model(config_data, config_train)
 
     """Tests on DeepSigns"""
     # run GMM

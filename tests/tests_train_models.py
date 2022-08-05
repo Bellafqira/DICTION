@@ -5,16 +5,15 @@ from util.util import Database, TrainModel
 
 class Tests:
     @staticmethod
-    def gen_split_database(config_data):
-        """ Load a new split database"""
-        Database.gen_split_dataset_loaders(config_data)
+    def gen_database(config_data):
+        """ generate a new database"""
+        Database.gen_dataset_loaders(config_data)
 
     @staticmethod
-    def train_model_split(config_data, config_train):
-        """load a split database and train the model"""
+    def train_model(config_data, config_train):
+        """load the database and train the model"""
         """Load data"""
-        train_loader, test_loader, attack_loader, remind_train_loader, attack_loader_size = \
-            Database.load_split_dataset_loaders(config_data)
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
         """Init the model"""
         init_model = TrainModel.get_model(config_train["architecture"], config_train["device"])
         print(init_model)
@@ -23,7 +22,7 @@ class Tests:
             _, acc_list = TrainModel.fine_tune(init_model, train_loader, test_loader, config_train)
             Tests.plot_acc(acc_list, config_train)
         else:
-            TrainModel.fine_tune(init_model, remind_train_loader, test_loader, config_train)
+            TrainModel.fine_tune(init_model, train_loader, test_loader, config_train)
 
     @staticmethod
     def plot_acc(acc_list, config_train):
