@@ -10,7 +10,7 @@ from attacks.pruning import pruning, print_sparsity
 from util.util import TrainModel, Random, Database
 
 
-from watermark.deepSigns_C import gmm_compute, gmm_load, get_trigger_set, extract, embed
+from watermark.deepsigns import gmm_compute, gmm_load, get_trigger_set, extract, embed
 
 
 class Tests:

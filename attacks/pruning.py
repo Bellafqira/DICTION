@@ -40,7 +40,8 @@ def pruning(model, config_attack):
                 print(name)
                 sum_weights += float(torch.sum(param == 0))
                 sum_nelemnt += float(param.nelement())
-        elif config_attack["architecture"] == "MLP" or config_attack["architecture"] == "CNN":
+        elif config_attack["architecture"] == "MLP" or config_attack["architecture"] == "CNN" \
+                or config_attack["architecture"] == "MLP_RIGA":
             if 'weight' in name:
                 sum_weights += float(torch.sum(param == 0))
                 sum_nelemnt += float(param.nelement())

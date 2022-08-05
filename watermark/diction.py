@@ -27,36 +27,32 @@ class AddGaussianNoise(object):
 
 
 def embed(init_model, test_loader, train_loader, config) -> object:
-
+    # Generate a random watermark to insert
     watermark = Random.get_rand_bits(config["watermark_size"], 0., 1.)
     watermark = torch.tensor(watermark).reshape(1, config["watermark_size"])
-    #
-    indices = random.choices(range(512), k=config["n_features"])
 
     # Instance the linear mod
     linear_mod = LinearMod(config)
     # Instance the model
     model = deepcopy(init_model)
-
-    # Get the activation layer
-    extractor = create_feature_extractor(model, [config["layer_name"]])
-    init_extractor = create_feature_extractor(init_model, [config["layer_name"]])
-    for param in init_extractor.parameters():
-        param.requires_grad = False
-
-    ber_ = 1
-    ber = 1
-    x_key, y_key = next(iter(train_loader))
-    # x_key = x_key[y_key == 9]
-    # x_key = x_key[[0]*len(x_key)]
+    # The parameters of training
     criterion = config["criterion"]
     optimizer = optim.Adam([
         {'params': model.parameters(), 'lr': config["lr"], 'weight_decay': config["wd"]},
         {'params': linear_mod.parameters(), 'lr': 1e-3, 'weight_decay': 1e-4}
     ], lr=config["lr"])
     scheduler = TrainModel.get_scheduler(optimizer, config)
-
-    # My latent space
+    # Get the activation layer of the original model and make sure that its parameters are not trainable
+    init_extractor = create_feature_extractor(init_model, [config["layer_name"]])
+    for param in init_extractor.parameters():
+        param.requires_grad = False
+    # Proj model
+    # print(get_graph_node_names(model))
+    extractor = create_feature_extractor(model, [config["layer_name"]])
+    # Select the indices of the activations maps that will be fed to the projection model
+    indices = random.choices(range(config["n_features_layer"]), k=config["n_features"])
+    # Latent space
+    x_key, y_key = next(iter(train_loader))
     x_key = torch.normal(mean=config["mean"], std=config["std"], size=x_key.shape)
 
     transform_train = transforms.Compose([
@@ -70,6 +66,10 @@ def embed(init_model, test_loader, train_loader, config) -> object:
     # rd_watermark = Random.get_rand_bits(config["watermark_size"], 1., 0.)
     # rd_watermark = torch.tensor(rd_watermark).reshape(1, config["watermark_size"])
 
+    ber_ = 1
+    ber = 1
+    loss = 1
+    loss_2 = 1
     for epoch in range(config["epochs"]):
         train_loss = correct = total = 0
         loop = tqdm(train_loader, leave=True)
@@ -82,26 +82,24 @@ def embed(init_model, test_loader, train_loader, config) -> object:
             y_pred = model(x_train)
 
             x_key, _ = next(iter(key_loader))
-            # print(x_key.shape)
             x_key = x_key.cuda()
+
             # Get activation maps
             x_fc = extractor(x_key)[config["layer_name"]]
-            act = torch.stack([torch.mean(x_fc, dim=0)])
-            act = torch.index_select(act.cpu(), 1, torch.tensor(indices))
+            act = torch.index_select(x_fc.cpu(), 1, torch.tensor(indices))
             # act = nn.functional.normalize(act).cpu()
 
             init_x_fc = init_extractor(x_key)[config["layer_name"]]
-            init_act = torch.stack([torch.mean(init_x_fc, dim=0)])
-            init_act = torch.index_select(init_act.cpu(), 1, torch.tensor(indices))
+            init_act = torch.index_select(init_x_fc.cpu(), 1, torch.tensor(indices))
             # init_act = nn.functional.normalize(init_act).cpu()
 
             out_watermark = linear_mod(act.cpu()).cuda()
             init_out_watermark = linear_mod(init_act.cpu()).cuda()
-            # print("hare1", out_watermark.shape)
-            # print("hare2", watermark.shape)
-            loss_2 = Metric.bce_(out_watermark, watermark.cuda()) + Metric.bce_(init_out_watermark, rd_watermark.cuda())
+
+            loss_2 = Metric.bce_(out_watermark, watermark[[0] * len(out_watermark)].cuda()) + \
+                     Metric.bce_(init_out_watermark, rd_watermark[[0] * len(out_watermark)].cuda())
             loss_1 = criterion(y_pred, y_train)
-            loss = loss_1 + loss_2
+            loss = loss_1 + config["lambda"]*loss_2
             assert loss.requires_grad == True, 'broken computational graph :/'
 
             loss.backward(retain_graph=True)
@@ -114,7 +112,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 
             # update the progress bar
             _, ber = _get_ber(out_watermark.cpu().detach().numpy(), watermark.cpu())
-            _, ber_ = _extract(act, linear_mod, watermark, print_ber=False)   # linear_mod.fc.bias
+            _, ber_ = _extract(act, linear_mod, watermark, print_ber=False)  # linear_mod.fc.bias
             loop.set_description(f"Epoch [{epoch}/{config['epochs']}]")
             loop.set_postfix(loss=train_loss / (batch_idx + 1), acc=100. * correct / total,
                              correct_total=f"[{correct}"
@@ -122,7 +120,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
                              ber_=f"{ber_:1.3f}")
         scheduler.step()
 
-        if (epoch + 1) % 2 == 0:
+        if (epoch + 1) % config["epoch_check"] == 0:
             with torch.no_grad():
                 x_fc = stack_x_fc(extractor, x_key, config)
                 act = torch.stack([torch.mean(x_fc, dim=0)])
@@ -137,13 +135,12 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 
             if ber_ == 0:
                 print("saving! ")
-                # only for pia we dont need these
-                # supplementary = {'model': model, 'key_matrix': linear_mod, 'watermark': watermark,
-                #                  'x_key': key_loader, 'y_key': y_key, 'ber': ber, 'bias': 0,    # linear_mod.fc.bias
-                #                  "layer_name": config["layer_name"], 'epoch_ext': 1, "indices": indices}
-                # TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
-                return model, ber_
+                supplementary = {'model': model, 'key_matrix': linear_mod, 'watermark': watermark,
+                                 'x_key': key_loader, 'y_key': y_key, 'ber': ber,
+                                 "layer_name": config["layer_name"], "indices": indices}
+                TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
                 break
+
     return model, ber_
 
 
@@ -151,10 +148,10 @@ def extract(model_watermarked, supp):
     model_watermarked.eval()
     extractor = create_feature_extractor(model_watermarked, [supp["layer_name"]])
     ber_total = torch.zeros(size=supp["watermark"].shape)
+    b_ext = 1
     for x_key, _ in supp["x_key"]:
         x_fc = extractor(x_key.cuda())[supp["layer_name"]]
-        act = torch.stack([torch.mean(x_fc, dim=0)])
-        act = torch.index_select(act.cpu(), 1, torch.tensor(supp["indices"]))
+        act = torch.index_select(x_fc.cpu(), 1, torch.tensor(supp["indices"]))
         # act = nn.functional.normalize(act).cpu()
         b_ext, ber = _extract(act.cuda(), supp["key_matrix"], supp["watermark"], print_ber=True)
         ber_total += b_ext
@@ -166,6 +163,7 @@ def extract(model_watermarked, supp):
 def _extract(act, model, watermark, print_ber=True):
     """ This function allows the detection"""
     watermark_out = model(act.cpu())
+    watermark_out = torch.stack([torch.mean(watermark_out, dim=0)])
     b_ext, ber = _get_ber(watermark_out.cpu().detach().numpy(), watermark.cpu())
 
     if print_ber:
@@ -173,14 +171,14 @@ def _extract(act, model, watermark, print_ber=True):
     return b_ext, ber
 
 
+def _get_ber(wat_out, watermark):
+    b_ext = 1. * (wat_out > 0.5)
+    ber = Metric.get_ber(b_ext, watermark)
+    return b_ext, ber
+
+
 def stack_x_fc(extractor, x_key, config):
     x_fc = torch.cat([extractor(x_key[i: i + config["batch_size"]].to(config["device"]))[config["layer_name"]].detach()
                      .cpu() for i in range(0, x_key.shape[0], config["batch_size"])], dim=0)
     return x_fc.cuda()
-
-
-def _get_ber(wat_out, watermark):
-    b_ext = 1.*(wat_out > 0.5)
-    ber = Metric.get_ber(b_ext, watermark)
-    return b_ext, ber
 

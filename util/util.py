@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from networks.cnn import CnnModel
 from networks.mlp import MLP
+from networks.mlp_riga import MLP_RIGA
 from networks.resnet import res_net18
 from networks.wide_resnet import wide_resnet28
 
@@ -224,7 +225,7 @@ class TrainModel:
                 correct += predicted.eq(targets).sum().item()
                 # update the progress bar
                 loop.set_description(f"Testing set ")
-                loop.set_postfix(loss=test_loss / (batch_idx + 1), acc=100. * correct / total,
+                loop.set_postfix(loss=test_loss / (batch_idx + 1), acc=100. * (correct / total),
                                  correct_total=f"[{correct}"f"/{total}]")
         acc = 100. * correct / total
         return acc
@@ -247,12 +248,13 @@ class TrainModel:
         return state
 
     @staticmethod
-    def select_architecture(config):
+    def select_architecture(config_data, config_model):
         """select the suitable architecture"""
         """get train and test loader"""
-        train_loader, test_loader = Database.get_loaders(database=config["database"], batch_size=config["batch_size"])
+        train_loader, test_loader = Database.get_loaders(database=config_data["database"],
+                                                         batch_size=config_data["batch_size"])
         """load the trained model in the given path"""
-        model = TrainModel.load_model(config["path_model"])['net']
+        model = TrainModel.load_model(config_model["path_model"])['net']
         return model, train_loader, test_loader
 
     @staticmethod
@@ -265,10 +267,8 @@ class TrainModel:
             model = MLP().to(device)
         elif architecture == "ResNet18":
             model = res_net18().to(device)
-            # model = torch.nn.DataParallel(model)
-        elif architecture == "Wide_ResNet28":
-            model = wide_resnet28().to(device)
-            # model = torch.nn.DataParallel(model)
+        elif architecture == "MLP_RIGA":
+            model = MLP_RIGA().to(device)
         else:
             raise Exception("architecture doesn't exist")
         return model

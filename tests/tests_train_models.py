@@ -16,6 +16,7 @@ class Tests:
         train_loader, test_loader = Database.load_dataset_loaders(config_data)
         """Init the model"""
         init_model = TrainModel.get_model(config_train["architecture"], config_train["device"])
+        print("Model to train...")
         print(init_model)
         """Start training the model"""
         if config_train["show_acc_epoch"]:

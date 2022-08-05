@@ -15,15 +15,15 @@ epochs = 200
 criterion = nn.CrossEntropyLoss()
 architecture = "ResNet18"
 
-cf_resnet18_dict_as = {"batch_size": batch_size, "lr": 0.1, "epochs": epochs, "wd": 5e-4, "opt": "SGD",
-                       "architecture": architecture, "milestones": [150, 200], "gamma": 0.1, "criterion": criterion,
-                       "scheduler": "CosineAnnealingLR",
-                       "device": device,
-                       "database": database,
-                       "momentum": 0.9,
-                       "save_path": "results/trained_models/resnet18/_db" + database + "_as" +
-                                    "_ep" + str(epochs) + "_bs" + str(batch_size),
-                       "save_fig_path": "results/trained_models/resnet18/db" + database
-                                        + "_ep" + str(epochs) + "_bs" + str(batch_size),
-                       "show_acc_epoch": True
-                       }
+cf_resnet18_dict = {"batch_size": batch_size, "lr": 0.1, "epochs": epochs, "wd": 5e-4, "opt": "SGD",
+                    "architecture": architecture, "milestones": [150, 200], "gamma": 0.1, "criterion": criterion,
+                    "scheduler": "CosineAnnealingLR",
+                    "device": device,
+                    "database": database,
+                    "momentum": 0.9,
+                    "save_path": "results/trained_models/resnet18/_db" + database + "_ep" + str(epochs) +
+                                 "_bs" + str(batch_size),
+                    "save_fig_path": "results/trained_models/resnet18/_db" + database
+                                     + "_ep" + str(epochs) + "_bs" + str(batch_size),
+                    "show_acc_epoch": True
+                    }
