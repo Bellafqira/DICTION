@@ -12,7 +12,7 @@ from networks.customTensorDataset import CustomTensorDataset
 from networks.linear_mod import DeepSigns
 from util.gmm import GaussianMixture
 from util.metric import Metric
-from util.util import TrainModel
+from util.util import TrainModel, Random
 import random
 from tqdm import tqdm
 
@@ -42,7 +42,6 @@ def gmm_load(n_features, n_components, path='idk'):
     gmm = GaussianMixture(n_components=n_components, n_features=n_features)
     gmm_dict = torch.load(path)
     gmm.load_state_dict(gmm_dict["gmm"])
-    gmm.mu = torch.nn.Parameter(gmm.mu, requires_grad=True)
     return gmm, gmm_dict["x_fc"], gmm_dict["hist"], gmm_dict["nonzero"]
 
 
@@ -84,19 +83,19 @@ def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
     y_train_tmp = y_train[indices_gmm]
 
     indices_gmm_train = torch.cat([torch.where(y_train_tmp == t)[0] for t in watermarked_classes])
+    if len(indices_gmm_train) == 0:
+        raise Exception("There is no samples with the same y_train and y_gmm for the selected means GMM")
 
     if nb_samplers < indices_gmm_train.shape[0]:
-        ind = random.sample(range(indices_gmm_train.shape[0]), nb_samplers)
+        ind = random.sample(range(len(indices_gmm_train)), nb_samplers)
         key_index = indices_gmm_train[ind]
         x_key, y_key = x_train_tmp[key_index], y_train_tmp[key_index]
-        print("here1", len(key_index))
+        print("x_key size = ", len(key_index))
     else:
-        key_index = indices_gmm_train
         x_key, y_key = x_train_tmp[indices_gmm_train], y_train_tmp[indices_gmm_train]
-        print("here2", len(indices_gmm_train))
-        if len(indices_gmm_train) == 0:
-            raise Exception("There is no samples with the same y_train and y_gmm for the selected means GMM")
-    return key_index, x_key, y_key
+        print("x_key size = ", len(indices_gmm_train))
+
+    return x_key, y_key
 
 
 # def subset_training_data_update(watermarked_classes, x_train, y_gmm, y_train, percent):
@@ -135,40 +134,34 @@ def get_trigger_set(gmm, x_fc, train_data, train_labels, watermarked_classes, pe
     # Now let's get for each sample in X it's corresponding GMM class
     y_gmm = gmm.predict(x_fc)
     # Let's now select a subset of the training data for the  WM embedding.
-    key_index, x_key, y_key = subset_training_data(watermarked_classes, train_data, y_gmm, train_labels,
-                                                   percent=percent)
-    # gmm.mu = torch.nn.Parameter(gmm.mu, requires_grad=True)
+    x_key, y_key = subset_training_data(watermarked_classes, train_data, y_gmm, train_labels, percent=percent)
 
-    # y_k are the subset of gmm classes corresponding to x_key
-    y_k = y_gmm[key_index]
-
-    return y_k, key_index, x_key, y_key
+    return x_key, y_key
 
 
 # Computing loss1
-def mu_loss1(x_fc1, mu, mu_bar, watermarked_classes, y_k, nb_components=10):  # y_key
-    # mu_t = mu[watermarked_classes].cuda()
-    mu_t = mu
-    t_bar = [t for t in range(nb_components) if t not in watermarked_classes]
-    index = torch.tensor([[i, j] for i in range(len(watermarked_classes)) for j in range(len(t_bar))])
+def mu_loss1(x_fc, mu, mu_bar, watermarked_classes, y_key):
+
+    index = torch.tensor([[i, j] for i in range(len(mu)) for j in range(len(mu_bar))])
 
     # increase the distance between carrier classes and non-carriers
-    loss_ = Metric.mse(mu[index.T[0]], mu_bar[index.T[1]].detach())  #
-    # print("here3 saas, ", [Metric.mse(mu[[t]*x_fc1[y_k == t].shape[0]].cuda(), x_fc1[y_k == t].cuda())
-    #                        for t in [8, 0, 3, 9, 7, 2, 5, 1]])
-
-    # gmm_loss = torch.stack([Metric.mse(x_fc1[y_k == t].cuda(), mu[[t]*x_fc1[y_k == t].shape[0]].cuda())
-    #                         for t in watermarked_classes.tolist()]).mean()
+    loss_ = Metric.mse(mu[index.T[0]], mu_bar[index.T[1]])  #
 
     act = torch.stack(
-        [torch.mean(x_fc1[torch.where(y_k == t)[0]], dim=0) for t in watermarked_classes])
+        [torch.mean(x_fc[torch.where(y_key == t)[0]], dim=0) for t in watermarked_classes])
     # approaching statistical means to the carrier GMM means
-    gmm_loss = Metric.mse(act.cuda(), mu_t.cuda())
+    gmm_loss = Metric.mse(act.cuda(), mu.cuda())
     return gmm_loss, loss_
 
 
-def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key, gmm, matrix_a, watermark,
+def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
           watermarked_classes, config) -> object:
+    # Generate the watermark
+    watermark = 1. * torch.randint(0, 2, size=(config["nb_wat_classes"], config["watermark_size"]))
+    print("watermark", watermark)
+    """generate matrix matrix_a"""
+    matrix_a = Random.generate_secret_matrix(config["n_features"], config["watermark_size"])
+
     """"updating embed with config_embed"""
     model = deepcopy(init_model)
     nodes, _ = get_graph_node_names(init_model)
@@ -179,10 +172,10 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
     # optimizer = util.util.TrainModel.get_optimizer(model, config, gmm.parameters())
     # DeepSigns model
     # first 1) Keep trace of mu_tbar to avoid their change at the time of the training
-    t_bar = [i for i in range(config["n_components"]) if i not in watermarked_classes]
-    mu_bar = gmm.mu.squeeze(0)[t_bar]
-    # initiate the deepSigns model with the means of GMM watermarked classes
     mu = gmm.mu.squeeze(0)
+    t_bar = [i for i in range(config["n_components"]) if i not in watermarked_classes]
+    mu_bar = mu[t_bar]
+    # initiate the deepSigns model with the means of GMM watermarked classes
     model_deepSigns = DeepSigns(mu[watermarked_classes])
 
     optimizer = optim.Adam([
@@ -200,15 +193,6 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
     while Metric.bce_(matrix_g, watermark[[0] * config["nb_wat_classes"]]).item() > 100:
         matrix_a = torch.randn_like(matrix_a)
         matrix_g = model_deepSigns(matrix_a)
-    # start training
-    # read secret data
-    # x_train, y_train = x_key.to(config["device"]), y_key.to(config["device"])
-    # y_train = y_train.type(torch.long)
-
-    # batch_size = 512
-    # train_loader = [
-    #     (x_key[i:i + batch_size].to(config["device"]), x_key[i:i + batch_size].to(config["device"]))
-    #     for i in range(0, x_key.shape[0], batch_size)]
 
     transform_train = transforms.Compose([
         # transforms.RandomCrop(size=32, padding=4),
@@ -216,7 +200,7 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
         # AddGaussianNoise(config["mean"], config["std"]),
     ])
     dataset_key = CustomTensorDataset(x_key, y_key, transform_list=transform_train)
-    key_loader = DataLoader(dataset=dataset_key, batch_size=config["batch_size"], shuffle=True)
+    key_loader = DataLoader(dataset=dataset_key, batch_size=len(x_key), shuffle=True)
 
     for epoch in range(config["epochs"]):
         # read secret data
@@ -228,11 +212,11 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
             x_key_, y_key_ = next(iter(key_loader))
             x_fc = extractor(x_key_)[config["layer_name"]]
             # Get the GMM means without changing the non-carriers GMM means.
-            mu = next(model_deepSigns.parameters())
+            mu_dp = next(model_deepSigns.parameters())
             # Get train data
             x_train, y_train = x_train.to(config["device"]), y_train.to(config["device"])
-            x_train = torch.cat((x_train, x_key_))
-            y_train = torch.cat((y_train, y_key_.cuda()))
+            # x_train = torch.cat((x_train, x_key_))
+            # y_train = torch.cat((y_train, y_key_.cuda()))
             y_train = y_train.type(torch.long)
 
             optimizer.zero_grad()
@@ -240,9 +224,8 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
             # for each gmm class i in T the first term of loss1 here measures the distance between mu[i]
             # and the statistical mean of X_key sample corresponding to class i
             # gmm_loss, mu_loss = mu_loss1(x_fc, mu1, watermarked_classes, y_key, nb_components=config["n_components"]) #deepsigns
-            gmm_loss, mu_loss = mu_loss1(x_fc, mu, mu_bar, watermarked_classes, y_key_,
-                                         nb_components=config["n_components"])
-            # modify y_k
+            gmm_loss, mu_loss = mu_loss1(x_fc, mu_dp, mu_bar, watermarked_classes, y_key_)
+            # modify y_key
             # sanity check
             assert gmm_loss.requires_grad == True, 'broken computational graph :/'
 
@@ -256,18 +239,14 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
             loss2 = Metric.bce_(matrix_g, watermark)
             loss = loss0 + config["lambda_1"] * loss1 + config["lambda_2"] * loss2
 
-            # ber = _get_ber(matrix_g, watermark)
-            # print(Metric.bce_(matrix_g, watermark[[0] * config["nb_wat_classes"]]).item())
-            # print(watermarked_classes)
-            assert loss.requires_grad == True, 'broken computational graph :/'
-
-            loss.backward(retain_graph=True)
-            optimizer.step()
-
             train_loss += loss0.item()
             _, predicted = y_pred.max(1)
             total += y_train.size(0)
             correct += predicted.eq(y_train).sum().item()
+
+            assert loss.requires_grad == True, 'broken computational graph :/'
+            loss.backward(retain_graph=True)
+            optimizer.step()
 
             ber = _get_ber(matrix_g, watermark)
             _, ber_ = _extract(x_fc, y_key_, watermarked_classes, matrix_a, watermark, print_ber=False)
@@ -296,7 +275,7 @@ def embed(train_loader, train_labels, init_model, test_loader, y_k, x_key, y_key
             print("saving!")
             supplementary = {'model': model, 'key_matrix': matrix_a, 'watermark': watermark,
                              'watermarked_classes': watermarked_classes,
-                             'x_key': x_key_, 'y_key': y_key_, 'y_k': y_k, 'ber': ber,
+                             'x_key': x_key_, 'y_key': y_key_, 'ber': ber,
                              "layer_name": config["layer_name"]}
             TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
             break

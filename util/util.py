@@ -22,6 +22,12 @@ class Util:
     def hard_th(matrix_g):
         return torch.nn.Threshold(0.5, 0)(matrix_g)
 
+    @staticmethod
+    def stack_x_fc(extractor, x_key, config):
+        x_fc = torch.cat([extractor(data.to(config["device"]))[config["layer_name"]].detach().cpu() for data, _ in
+                          x_key], dim=0)
+        return x_fc.cuda()
+
 
 class Random:
     @staticmethod

@@ -406,7 +406,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "lambda_1": 1,
                      "lambda_2": 1,
 
-                     "n_features": 512,
+                     "n_features": 64,
                      "n_components": 10,
                      "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                      "percent_ts": 0.01,
@@ -427,7 +427,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
 
                      "momentum": 0,
                      "milestones": [100, 150],
-                     "gamma": 0,
+                     "gamma": 0.1,
                      "criterion": cf_mlp_riga_dict["criterion"],
                      "device": cf_mlp_riga_dict["device"],
                      }

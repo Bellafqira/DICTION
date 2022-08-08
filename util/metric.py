@@ -32,4 +32,4 @@ class Metric:
     @staticmethod
     def mse(a, b):
         """Quadratic error"""
-        return torch.nn.MSELoss(reduction='sum')(a, b)
+        return torch.nn.MSELoss(reduction='mean')(a, b)
