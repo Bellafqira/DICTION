@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import time
 
+from matplotlib import pyplot as plt
 from torchvision.models.feature_extraction import get_graph_node_names, create_feature_extractor
 
 from attacks.pruning import pruning, print_sparsity
@@ -89,14 +90,7 @@ class Tests:
                                        watermarked_classes=watermarked_classes, x_fc=x_fc,
                                        percent=config_embed["percent_ts"])
 
-        """generate the watermark watermark"""
-        # watermark = Random.get_rand_bits(config_embed["watermark_size"], 0., 1.)
-        # # watermark = torch.ones(config_embed["watermark_size"])
-        # watermark = torch.tensor(watermark).reshape(1, config_embed["watermark_size"])
-        # watermark = 1. * torch.randint(0, 2, size=(config_embed["nb_wat_classes"], config_embed["watermark_size"]))
-        # print("watermark", watermark)
-
-        """embed the watermark with deepsign_c"""
+        """embed the watermark with deepsigns"""
         model_wat, ber = embed(train_loader, init_model, test_loader, x_key, y_key, gmm, watermarked_classes,
                                config_embed)
 
@@ -106,101 +100,152 @@ class Tests:
     @staticmethod
     def fine_tune_attack(config_embed, config_attack, config_data):
         # Get data
-        train_loader, test_loader, attack_loader, remind_train_loader, attack_loader_size = \
-            Database.load_split_dataset_loaders(config_data)
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
         # load the watermarked model
-        watermarked_model, acc, epoch, supp = TrainModel.load_model(config_embed['save_path'] + ".pth", supp=True)
-        model_wat = supp["model"]
+        dict_model = TrainModel.load_model(config_embed['save_path'])
+        model_wat = dict_model["supplementary"]["model"]
         # fine tune the watermarked model
         print("First check")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
 
-        # for name, param in model_wat.named_parameters():
-        #     if name in ["fc2.weight", "fc2.bias"]:
-        #         continue
-        #     else:
-        #         param.requires_grad = False
         for i in range(1, 4):
             model_wat = TrainModel.fine_tune(model_wat, train_loader, test_loader, config_attack)
             # check the accuracy and BER
             print(f"BER after finetuning {i * 50}")
-            extract(model_wat, supp)
+            extract(model_wat, dict_model["supplementary"])
             TrainModel.evaluate(model_wat, test_loader, config_attack)
 
     @staticmethod
     def pruning_attack(config_embed, config_attack, config_data):
         # Get data
-        train_loader, test_loader, attack_loader, remind_train_loader, attack_loader_size = \
-            Database.load_split_dataset_loaders(config_data)
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
         # load the watermarked model
-        watermarked_model, acc, epoch, supp = TrainModel.load_model(config_embed['save_path'] + ".pth", supp=True)
-        model_wat = supp["model"]
+        dict_model = TrainModel.load_model(config_embed['save_path'])
+        model_wat = dict_model["supplementary"]["model"]
         # fine tune the watermarked model
         print("First check")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
-        model = pruning(model_wat, config_attack)
-        print("evaluate the model after fine tuning")
-        TrainModel.evaluate(model, test_loader, config_attack)
-        extract(model, supp)
-        # print_sparsity(model)
-        # print(model)
+        # results_acc = []
+        # results_ber = []
+        for i in range(10):
+            config_attack["amount"] = (i + 1) / 10
+            model = pruning(model_wat, config_attack)
+            print("evaluate the model after pruning of amount", (i + 1) / 10)
+            TrainModel.evaluate(model, test_loader, config_attack)
+            extract(model, dict_model["supplementary"])
 
     @staticmethod
     def overwriting_attack(config_embed, config_attack, config_data):
         """embedding """
-        # load the watermarked model
-        watermarked_model, acc, epoch, supp = TrainModel.load_model(config_embed['save_path'] + ".pth", supp=True)
-        model_wat = supp["model"]
         # Get data
-        train_loader, test_loader, attack_loader, remind_train_loader, attack_loader_size = \
-            Database.load_split_dataset_loaders(config_data)
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
+        # load the watermarked model
+        dict_model = TrainModel.load_model(config_embed['save_path'])
+        model_wat = dict_model["supplementary"]["model"]
         # evaluate the model
         print("evaluate the model before watermarking")
         TrainModel.evaluate(model_wat, test_loader, config_embed)
+        # define extractor
+        extractor = create_feature_extractor(model_wat, [config_embed["layer_name"]])
         print("check ber of watermarked model")
-        extract(model_wat, supp)
+        extract(model_wat, dict_model["supplementary"])
         # changing the batch_size to 1
         # T in the paper
-        gmm, x_fc, _, gmm_nonzero = gmm_load(config_attack["n_features"], config_attack["n_components"],
-                                             path=config_attack["path_gmm"])
+        gmm, _, _, gmm_nonzero = gmm_load(config_attack["n_features"], config_attack["n_components"],
+                                          path=config_attack["path_gmm"])
         """Get the model, data and the paths of gmm and the model"""
         watermarked_classes = random.sample([i for i in gmm_nonzero[0]], config_attack["nb_wat_classes"])
         watermarked_classes = torch.tensor(watermarked_classes)
-        print("here", watermarked_classes)
-        """changing the batch_size"""
+        print("watermarked classes = ", watermarked_classes)
+
+        """Get data, labels and activation maps"""
         train_data = torch.tensor([]).cuda()
+        x_fc = torch.tensor([])
         train_labels = torch.tensor([])
-        for idx_batch, data in enumerate(train_loader):
+        for data in train_loader:
             images, label = data
-            images = images.to(config_attack["device"])
-            tmp_data = torch.cat([img[None, :] for img in images])
-            train_data = torch.cat((train_data, tmp_data), 0)
+            images = images.to(config_embed["device"])
+            train_data = torch.cat((train_data, images), 0)
             train_labels = torch.cat((train_labels, label), 0)
+            x_fc_tmp = extractor(images.to(config_embed["device"]))[config_embed["layer_name"]].detach().cpu()
+            x_fc = torch.cat((x_fc, x_fc_tmp), 0)
+        print(train_data.shape)
+        print(train_labels.shape)
+        print(x_fc.shape)
 
         """generate the trigger set"""
-        y_k, key_index, x_key, y_key = get_trigger_set(gmm=gmm, train_data=train_data, train_labels=train_labels,
-                                                       watermarked_classes=watermarked_classes, x_fc=x_fc,
-                                                       percent=config_attack["percent_ts"])
+        x_key, y_key = get_trigger_set(gmm=gmm, train_data=train_data, train_labels=train_labels,
+                                       watermarked_classes=watermarked_classes, x_fc=x_fc,
+                                       percent=config_attack["percent_ts"])
 
-        """generate the watermark watermark"""
-        watermark = Random.get_rand_bits(config_attack["watermark_size"], 0., 1.)
-        # watermark = torch.ones(config_embed["watermark_size"])
-        watermark = torch.tensor(watermark).reshape(1, config_attack["watermark_size"])
-        print("watermark", watermark)
-        """generate matrix matrix_a"""
-        matrix_a = Random.generate_secret_matrix(config_attack["n_features"], config_attack["watermark_size"])
-        """embed the watermark with deepsign_c"""
-        """embed the watermark with deepsign_c"""
-        model_attacked, ber = embed(train_loader, train_labels, model_wat, test_loader, y_k, x_key, y_key, gmm,
-                                    matrix_a, watermark,
-                                    watermarked_classes, config_attack)
-        # print("evaluate the watermarked model")
-        model_attacked, acc, epoch, supp_attacked = TrainModel.load_model(config_attack['save_path'] + ".pth",
-                                                                          supp=True)
-        model_attacked = supp_attacked["model"]
+        """embed the watermark with deepsigns"""
+        model_attacked, ber = embed(train_loader, model_wat, test_loader, x_key, y_key, gmm, watermarked_classes,
+                                    config_attack)
+
+        # load the watermarked model
+        dict_model_att = TrainModel.load_model(config_attack['save_path'])
+        model_attacked = dict_model_att["supplementary"]["model"]
 
         acc = TrainModel.evaluate(model_attacked, test_loader, config_attack)
         # supp["epoch_ext"] = 10
-        _, ber_ex = extract(model_attacked, supp)
+        _, ber_ex = extract(model_attacked, dict_model["supplementary"])
         print("last ber", ber_ex)
         return acc, ber
+
+    @staticmethod
+    def show_weights_distribution(config_embed, config_data):
+        # Get data
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
+        # Get model
+        init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
+        init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
+        init_model.eval()
+        # evaluate the original model
+        print("evaluate the original model")
+        TrainModel.evaluate(init_model, test_loader, config_embed)
+        # load the watermarked model
+        dict_model = TrainModel.load_model(config_embed['save_path'])
+        model_wat = dict_model["supplementary"]["model"]
+        model_wat.eval()
+        # evaluate the original model
+        print("evaluate the watermarked model")
+        TrainModel.evaluate(model_wat, test_loader, config_embed)
+
+        extractor_init = create_feature_extractor(init_model, [config_embed["layer_name"]])
+        extractor_wat = create_feature_extractor(model_wat, [config_embed["layer_name"]])
+
+        x_train, _ = next(iter(train_loader))
+        x_fc_init = extractor_init(x_train.cuda())[config_embed["layer_name"]]
+        x_fc_wat = extractor_wat(x_train.cuda())[config_embed["layer_name"]]
+        x_fc_init = torch.mean(x_fc_init, dim=0)
+        x_fc_wat = torch.mean(x_fc_wat, dim=0)
+
+        bins = list(np.arange(-2, 4, 0.2))
+
+        plt.subplot(1, 4, 1)
+        plt.hist(torch.flatten(x_fc_init.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
+        plt.xlabel('Bins')
+        plt.ylabel('Frequency')
+        plt.title('non watermarked activation maps')
+        plt.subplot(1, 4, 2)
+        plt.hist(torch.flatten(x_fc_wat.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
+        plt.xlabel('Bins')
+        # plt.ylabel('Frequency')
+        plt.title('watermarked activation maps')
+
+        bins = list(np.arange(-1, 2, 0.1))
+        for (name_init, param_init), (name, param) in zip(init_model.named_parameters(), model_wat.named_parameters()):
+            print(name_init)
+            if name == config_embed["layer_name"] + '.weight' or name == "layer4.1.conv2.weight":
+                plt.subplot(1, 4, 3)
+                plt.hist(torch.flatten(param_init.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
+                plt.xlabel('Bins')
+                # plt.ylabel('Frequency')
+                plt.title('non watermarked weights')
+                plt.subplot(1, 4, 4)
+                plt.hist(torch.flatten(param.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
+                plt.xlabel('Bins')
+                # plt.ylabel('Frequency')
+                plt.title('watermarked weights')
+                plt.show()
+                break

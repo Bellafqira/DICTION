@@ -13,4 +13,4 @@ database = "cifar10"
 batch_size = 128
 
 cf_cifar10_data = {"batch_size": batch_size, "database": database, "device": device,
-                   "save_path": f"datasets/{database}/_db{database}/_bs{batch_size}.pth"}
+                   "save_path": f"datasets/{database}/_db{database}_bs{batch_size}.pth"}

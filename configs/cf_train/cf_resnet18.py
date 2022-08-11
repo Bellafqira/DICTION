@@ -22,7 +22,7 @@ cf_resnet18_dict = {"batch_size": batch_size, "lr": 0.1, "epochs": epochs, "wd":
                     "database": database,
                     "momentum": 0.9,
                     "save_path": "results/trained_models/resnet18/_db" + database + "_ep" + str(epochs) +
-                                 "_bs" + str(batch_size),
+                                 "_bs" + str(batch_size) + ".pth",
                     "save_fig_path": "results/trained_models/resnet18/_db" + database
                                      + "_ep" + str(epochs) + "_bs" + str(batch_size),
                     "show_acc_epoch": True

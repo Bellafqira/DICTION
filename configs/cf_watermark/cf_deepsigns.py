@@ -26,7 +26,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "percent_ts": 0.01,
 
                 "layer_name": layer_name,
-                "lr": 1e-3,
+                "lr": 1e-4,
                 "wd": 0,
                 "opt": "Adam",
                 "scheduler": "MultiStepLR",
@@ -167,7 +167,7 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
 
                 "momentum": 0,
                 "milestones": [2000, 3000],
-                "gamma": 1,
+                "gamma": .1,
                 "criterion": cf_cnn_dict["criterion"],
                 "device": cf_cnn_dict["device"],
                 }
@@ -432,13 +432,13 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "device": cf_mlp_riga_dict["device"],
                      }
 
-epoch_attack = 50
+epoch_attack = 2
 lr_attack = 1e-4
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
                    + str(nb_wat_classes)
 
-cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_dict,
-                         "database": cf_mlp_riga_dict["database"],
+cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
+                         "database": cf_mlp_riga_embed["database"],
                          "path_model": cf_mlp_riga_embed["save_path"],
                          "watermark_size": watermark_size,
                          "epochs": epoch_attack,
@@ -450,7 +450,7 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_dict,
                          "momentum": cf_mlp_riga_dict["momentum"],
                          "milestones": [150, 200],
                          "gamma": cf_mlp_riga_dict["momentum"],
-                         "criterion": cf_mlp_riga_dict["gamma"],
+                         "criterion": cf_mlp_riga_dict["criterion"],
 
                          "device": cf_mlp_riga_dict["device"],
                          "save_path": "results/attacks/finetuning/deepsigns/" + cf_mlp_riga_dict[
@@ -467,6 +467,8 @@ cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
                          "path_model": cf_mlp_riga_embed["save_path"],
                          "watermark_size": watermark_size,
                          "amount": 0.7,
+                         "criterion": cf_mlp_riga_dict["criterion"],
+                         "device": cf_mlp_riga_dict["device"],
                          "architecture": cf_mlp_dict["architecture"],
                          "save_path": "results/attacks/pruning/deepsigns/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
@@ -475,7 +477,7 @@ cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
 layer_name = "fc2"
 epoch_attack = 100
 watermark_size = 64
-nb_wat_classes = 1
+nb_wat_classes = 4
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
                    + str(nb_wat_classes)
 
@@ -487,7 +489,7 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_dict,
                          "lambda_1": 1,
                          "lambda_2": 1,
 
-                         "n_features": 512,
+                         "n_features": 64,
                          "n_components": 10,
                          "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                          "percent_ts": 0.01,

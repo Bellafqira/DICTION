@@ -82,7 +82,12 @@ def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
     x_train_tmp = x_train[indices_gmm]
     y_train_tmp = y_train[indices_gmm]
 
-    indices_gmm_train = torch.cat([torch.where(y_train_tmp == t)[0] for t in watermarked_classes])
+    var_ind_train = [torch.where(y_train_tmp == t)[0] for t in watermarked_classes]
+    for var in var_ind_train:
+        if len(var) == 0:
+            raise Exception("There is an empty GMM class")
+
+    indices_gmm_train = torch.cat(var_ind_train)
     if len(indices_gmm_train) == 0:
         raise Exception("There is no samples with the same y_train and y_gmm for the selected means GMM")
 
@@ -96,39 +101,6 @@ def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
         print("x_key size = ", len(indices_gmm_train))
 
     return x_key, y_key
-
-
-# def subset_training_data_update(watermarked_classes, x_train, y_gmm, y_train, percent):
-#     nb_samples = int(len(x_train) * percent)
-#     nb_samples_t = nb_samples // len(watermarked_classes)
-#     indices = [torch.where(y_gmm == t)[0] for t in watermarked_classes]
-#     key_index = torch.tensor([])
-#     for ind in indices:
-#         pos = random.choices(range(ind.shape[0]), k=nb_samples_t)
-#         key_index = torch.cat((key_index, ind[pos]))
-#     key_index = key_index.type(torch.int64)
-#     x_key, y_key = x_train[key_index], y_train[key_index]
-#     return key_index, x_key, y_key
-
-#
-# def subset_training_data_update(watermarked_classes, x_train, y_gmm, y_train, percent):
-#     nb_samples = int(len(x_train) * percent)
-#     nb_samples_t = nb_samples // len(watermarked_classes)
-#
-#     indices_ = (y_gmm == y_train).float().nonzero().flatten()
-#     y_inter = y_gmm[indices_]
-#     y_ii = y_train[indices_]
-#     print("hereee", y_ii)
-#     indices = [torch.where(y_inter == t)[0] for t in watermarked_classes]
-#
-#     key_index = torch.tensor([])
-#     for ind in indices:
-#         pos = random.choices(range(ind.shape[0]), k=nb_samples_t)
-#         key_index = torch.cat((key_index, ind[pos]))
-#     key_index = key_index.type(torch.int64)
-#     x_key, y_key = x_train[key_index], y_train[key_index]
-#     return key_index, x_key, y_key
-
 
 def get_trigger_set(gmm, x_fc, train_data, train_labels, watermarked_classes, percent):
     # Now let's get for each sample in X it's corresponding GMM class
@@ -169,7 +141,6 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
     # extract the features of the given layer
     extractor = create_feature_extractor(model, [config["layer_name"]])
     criterion = config["criterion"]
-    # optimizer = util.util.TrainModel.get_optimizer(model, config, gmm.parameters())
     # DeepSigns model
     # first 1) Keep trace of mu_tbar to avoid their change at the time of the training
     mu = gmm.mu.squeeze(0)
@@ -187,10 +158,12 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
     # ber_ design the ber computed by the statistical means
     ber_ = 1
 
-    # matrix_g = torch.nn.Sigmoid()(mu1[watermarked_classes] @ matrix_a)
+    x_key_, y_key_ = 0, 0
+    loss, gmm_loss, mu_loss = 1, 1, 1
+
     matrix_g = model_deepSigns(matrix_a)
-    # 1, 2, 5, 20 for wat <=16, =32, =64, =128
-    while Metric.bce_(matrix_g, watermark[[0] * config["nb_wat_classes"]]).item() > 100:
+
+    while Metric.bce_(matrix_g, watermark).item() > 100:
         matrix_a = torch.randn_like(matrix_a)
         matrix_g = model_deepSigns(matrix_a)
 
@@ -223,19 +196,16 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
 
             # for each gmm class i in T the first term of loss1 here measures the distance between mu[i]
             # and the statistical mean of X_key sample corresponding to class i
-            # gmm_loss, mu_loss = mu_loss1(x_fc, mu1, watermarked_classes, y_key, nb_components=config["n_components"]) #deepsigns
             gmm_loss, mu_loss = mu_loss1(x_fc, mu_dp, mu_bar, watermarked_classes, y_key_)
-            # modify y_key
             # sanity check
             assert gmm_loss.requires_grad == True, 'broken computational graph :/'
-
-            # matrix_g = torch.nn.Sigmoid()(mu1[watermarked_classes] @ matrix_a)
             matrix_g = model_deepSigns(matrix_a)
+
             assert Metric.bce_(matrix_g, watermark).requires_grad == True, 'broken computational graph :/'
             # λ1, λ2 control the trade of between WM embedding and the accuracy of the model
             y_pred = model(x_train)
             loss0 = criterion(y_pred, y_train)
-            loss1 = gmm_loss - 0.001 * mu_loss
+            loss1 = gmm_loss - 0 * mu_loss
             loss2 = Metric.bce_(matrix_g, watermark)
             loss = loss0 + config["lambda_1"] * loss1 + config["lambda_2"] * loss2
 
@@ -260,8 +230,6 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
         if (epoch + 1) % 20 == 0:
             with torch.no_grad():
                 ber = _get_ber(matrix_g, watermark)
-                # x_fc = stack_x_fc(extractor, x_key, 100, config)
-                # _, ber_ = _extract(x_fc, y_key, watermarked_classes, matrix_a, watermark, print_ber=False)
 
                 x_fc = stack_x_fc(extractor, x_key_, config["batch_size"], config)
                 _, ber_ = _extract(x_fc, y_key_, watermarked_classes, matrix_a, watermark, print_ber=False)
@@ -271,11 +239,11 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
                     f"epoch:{epoch}---loss: {loss.item():1.3f}---ber: {ber:1.3f}---ber_mean: {ber_:1.3f}---gmm_loss: "
                     f"{gmm_loss:1.4f}---mu_sep: {mu_loss:.3f}---acc: {acc}")
 
-        if ber_ == 0 and epoch % 10 == 0:
+        if ber_ == 0 and epoch % 20 == 0:
             print("saving!")
             supplementary = {'model': model, 'key_matrix': matrix_a, 'watermark': watermark,
                              'watermarked_classes': watermarked_classes,
-                             'x_key': x_key_, 'y_key': y_key_, 'ber': ber,
+                             'key_loader': key_loader,  'ber': ber,
                              "layer_name": config["layer_name"]}
             TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
             break
@@ -285,31 +253,30 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
 
 def extract(model_watermarked, supp):
     extractor = create_feature_extractor(model_watermarked, [supp["layer_name"]])
-    x_fc = extractor(supp["x_key"])[supp["layer_name"]]
-    return _extract(x_fc, supp["y_key"], supp["watermarked_classes"], supp["key_matrix"], supp["watermark"],
+    x_key, y_key = next(iter(supp["key_loader"]))
+    x_fc = extractor(x_key)[supp["layer_name"]]
+    return _extract(x_fc, y_key, supp["watermarked_classes"], supp["key_matrix"], supp["watermark"],
                     print_ber=True)
 
 
-def _extract(x_fc1, y_k, watermarked_classes, matrix_a, watermark, print_ber=True):
+def _extract(x_fc, y_k, watermarked_classes, matrix_a, watermark, print_ber=True):
     """ This function allows the detection"""
-    μ_extracted = torch.stack([torch.mean(x_fc1[torch.where(y_k == t)[0]], dim=0) for t in watermarked_classes])
-    g_extracted = torch.nn.Sigmoid()(μ_extracted @ matrix_a.cuda()).cpu()
-    b_extracted = (g_extracted > 0.5) * 1.
-    ber = Metric.get_ber(b_extracted, watermark)
+    mu_ext = torch.stack([torch.mean(x_fc[torch.where(y_k == t)[0]], dim=0) for t in watermarked_classes])
+    g_ext = torch.nn.Sigmoid()(mu_ext @ matrix_a.cuda()).cpu()
+    b_ext = (g_ext > 0.5) * 1.
+    ber = Metric.get_ber(b_ext, watermark)
     if print_ber:
-        print(f'BER with fp = {ber}')
-    return b_extracted, ber * 100
+        print(f'BER after extraction = {ber}')
+    return b_ext, ber
 
 
 def stack_x_fc(extractor, x_key, batch_size, config):
     x_fc = torch.cat([extractor(x_key[i: i + batch_size].to(config["device"]))[config["layer_name"]] for i in
-                      range(0, x_key.shape[0],
-                            batch_size)], dim=0)
+                      range(0, len(x_key), batch_size)], dim=0)
     return x_fc
 
 
 def _get_ber(matrix_g, watermark):
     b_ext = (matrix_g > 0.5) * 1.
-    # b_ext = (b_ext.mean(axis=0) > 0.5) * 1
     ber = abs(b_ext - watermark).mean()
     return ber

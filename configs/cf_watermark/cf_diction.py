@@ -8,6 +8,7 @@ from copy import deepcopy
 # ************* watermarking MLP architecture ****************
 watermark_size = 256
 epochs_embed = 10000
+epoch_check = 10
 layer_name = "fc2"
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
 
@@ -15,15 +16,17 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "database": cf_mlp_dict["database"],
                 "watermark_size": watermark_size,
                 "epochs": epochs_embed,
+                "epoch_check": epoch_check,
 
                 # Latent space parameters
                 "batch_size": 128,
                 "mean": 0,
                 "std": 1,
                 "n_features": 512 // 32,
-                "lambda_1": 1e-0,
-
+                "n_features_layer": 512,
+                "lambda": 1e-0,
                 "layer_name": layer_name,
+
                 "lr": 1e-4,
                 "wd": 0,
                 "opt": "Adam",
@@ -118,7 +121,7 @@ cf_non_watermarked["show_acc_epoch"] = False
 cf_watermarked = deepcopy(cf_mlp_embed)
 cf_watermarked["epochs"] = 10
 cf_watermarked["show_acc_epoch"] = False
-nb_examples = 1224
+nb_examples = 800
 save_path_attack = "_l" + layer_name + "_wat" + str(
     cf_watermarked["watermark_size"]) + "_ep" + str(cf_non_watermarked["epochs"]) + "_nb_examples" + str(nb_examples)
 
@@ -126,25 +129,30 @@ cf_mlp_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                      "train_watermarked": cf_watermarked,
                      "save_path": "results/attacks/pia/diction/" + cf_mlp_dict[
                          "architecture"].lower() + "/" + save_path_attack + ".pth",
-                     "nb_examples": nb_examples
+                     "nb_examples": nb_examples,
+
                      }
 
 # ************* watermarking CNN architecture ****************
 watermark_size = 256
 epochs_embed = 10000
 layer_name = "fc1"
+epoch_check = 10
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
+
 cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "database": cf_cnn_dict["database"],
                 "watermark_size": watermark_size,
                 "epochs": epochs_embed,
+                "epoch_check": epoch_check,
 
                 # Latent space parameters
                 "batch_size": 10,
                 "mean": 0,
                 "std": 1,
-                "lambda_1": 1e-0,
                 "n_features": 512 // 32,
+                "n_features_layer": 512,
+                "lambda": 1e-0,
                 "layer_name": layer_name,
 
                 "lr": 1e-4,
@@ -208,8 +216,7 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
 layer_name = "fc1"
 epoch_attack = 100
 watermark_size = 512
-save_path_attack = "_b" + "_l" + layer_name + "_wat" + str(
-    watermark_size) + "_ep" + str(epoch_attack) + "_pt"
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_pt"
 cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed["save_path"],
@@ -253,6 +260,7 @@ cf_cnn_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 # ************* watermarking Resnet18 architecture ****************
 watermark_size = 256
 epochs_embed = 1000
+epoch_check = 10
 layer_name = "view"
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
 
@@ -260,13 +268,14 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "database": cf_resnet18_dict["database"],
                      "watermark_size": watermark_size,
                      "epochs": epochs_embed,
-
-                     # Latent space
+                     "epoch_check": epoch_check,
+                     # Latent space parameters
                      "mean": 0,
                      "std": 1,
                      "batch_size": 10,
-                     "lambda_1": 1e-0,
                      "n_features": 512 // 32,
+                     "n_features_layer": 512,
+                     "lambda": 1e-0,
                      "layer_name": layer_name,
 
                      "lr": 1e-4,

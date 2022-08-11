@@ -33,3 +33,12 @@ class Metric:
     def mse(a, b):
         """Quadratic error"""
         return torch.nn.MSELoss(reduction='mean')(a, b)
+
+    @staticmethod
+    def binary_acc(y_pred, y_test):
+        y_pred_tag = torch.round(torch.sigmoid(y_pred))
+        correct_results_sum = (y_pred_tag == y_test).sum().float()
+        acc = correct_results_sum / y_test.shape[0]
+        acc = torch.round(acc * 100)
+
+        return acc

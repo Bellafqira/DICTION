@@ -155,6 +155,7 @@ class TrainModel:
                                                          config=config,
                                                          best_acc=best_acc, epoch=0)
 
+        acc_list = []
         if config["show_acc_epoch"]:
             acc_list = [acc]
 
@@ -223,6 +224,7 @@ class TrainModel:
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(loop):
                 inputs, targets = inputs.to(device), targets.to(device)
+                # targets = targets.type(torch.long)
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 test_loss += loss.item()
@@ -231,7 +233,7 @@ class TrainModel:
                 correct += predicted.eq(targets).sum().item()
                 # update the progress bar
                 loop.set_description(f"Testing set ")
-                loop.set_postfix(loss=test_loss / (batch_idx + 1), acc=100. * (correct / total),
+                loop.set_postfix(loss=test_loss / (batch_idx + 1), acc=f"{100. * (correct / total)}",
                                  correct_total=f"[{correct}"f"/{total}]")
         acc = 100. * correct / total
         return acc

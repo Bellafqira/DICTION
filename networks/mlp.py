@@ -13,6 +13,7 @@ class MLP(nn.Module):
         self.fc3 = nn.Linear(512, 10)
         self.dropout = nn.Dropout(0.5)
         self.bt_n = nn.BatchNorm1d(512)
+
     def forward(self, x):
         out = torch.flatten(x, 1)
         out = self.fc1(out)
