@@ -10,7 +10,8 @@ watermark_size = 256
 epochs_embed = 10000
 epoch_check = 10
 layer_name = "fc2"
-save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
+save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
+                  str(epoch_check)
 
 cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "database": cf_mlp_dict["database"],
@@ -138,7 +139,8 @@ watermark_size = 256
 epochs_embed = 10000
 layer_name = "fc1"
 epoch_check = 10
-save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
+save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
+                  str(epoch_check)
 
 cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "database": cf_cnn_dict["database"],
@@ -262,7 +264,8 @@ watermark_size = 256
 epochs_embed = 1000
 epoch_check = 10
 layer_name = "view"
-save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed)
+save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
+                  str(epoch_check)
 
 cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "database": cf_resnet18_dict["database"],
