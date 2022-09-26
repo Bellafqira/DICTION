@@ -97,23 +97,57 @@ class Tests:
         acc = TrainModel.evaluate(model_wat, test_loader, config_embed)
         return acc, ber
 
+    # @staticmethod
+    # def fine_tune_attack(config_embed, config_attack, config_data):
+    #     # Get data
+    #     train_loader, test_loader = Database.load_dataset_loaders(config_data)
+    #     # load the watermarked model
+    #     dict_model = TrainModel.load_model(config_embed['save_path'])
+    #     model_wat = dict_model["supplementary"]["model"]
+    #     # fine tune the watermarked model
+    #     print("First check")
+    #     TrainModel.evaluate(model_wat, test_loader, config_attack)
+
+    #     for i in range(1, 4):
+    #         model_wat = TrainModel.fine_tune(model_wat, train_loader, test_loader, config_attack)
+    #         # check the accuracy and BER
+    #         print(f"BER after finetuning {i * 50}")
+    #         extract(model_wat, dict_model["supplementary"])
+    #         TrainModel.evaluate(model_wat, test_loader, config_attack)
+
     @staticmethod
     def fine_tune_attack(config_embed, config_attack, config_data):
         # Get data
         train_loader, test_loader = Database.load_dataset_loaders(config_data)
+        # Get model
+        init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
+        init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
+        init_model.eval()
         # load the watermarked model
         dict_model = TrainModel.load_model(config_embed['save_path'])
         model_wat = dict_model["supplementary"]["model"]
         # fine tune the watermarked model
-        print("First check")
+        print("Check the accuracy of the watermarked model")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
-
-        for i in range(1, 4):
+        print("Compute the BER from the original model (non watermarked)")
+        _, ber = extract(init_model, dict_model["supplementary"])
+        print("BER = ", ber)
+        print("Start fine-tuning")
+        results_acc = []
+        results_ber = []
+        epochs = [50, 100, 150]
+        for ep in epochs:
             model_wat = TrainModel.fine_tune(model_wat, train_loader, test_loader, config_attack)
             # check the accuracy and BER
-            print(f"BER after finetuning {i * 50}")
-            extract(model_wat, dict_model["supplementary"])
-            TrainModel.evaluate(model_wat, test_loader, config_attack)
+            _, ber = extract(model_wat, dict_model["supplementary"])
+            acc = TrainModel.evaluate(model_wat, test_loader, config_attack)
+            print(f"ACC and BER after finetuning {ep}")
+            print("BER = ", ber, "ACC = ", acc)
+            results_acc.append(acc)
+            results_ber.append(ber)
+        print("epochs = ", epochs)
+        print("results_acc = ", results_acc)
+        print("results_ber = ", results_ber)
 
     @staticmethod
     def pruning_attack(config_embed, config_attack, config_data):
@@ -123,16 +157,21 @@ class Tests:
         dict_model = TrainModel.load_model(config_embed['save_path'])
         model_wat = dict_model["supplementary"]["model"]
         # fine tune the watermarked model
-        print("First check")
+        print("First check before pruning")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
-        # results_acc = []
-        # results_ber = []
-        for i in range(10):
-            config_attack["amount"] = (i + 1) / 10
+        results_acc = []
+        results_ber = []
+        pruning_rate = [x / 10 for x in range(10)] + [0.95, 0.99, 1.]
+
+        for rate in pruning_rate:
+            config_attack["amount"] = rate
             model = pruning(model_wat, config_attack)
-            print("evaluate the model after pruning of amount", (i + 1) / 10)
-            TrainModel.evaluate(model, test_loader, config_attack)
-            extract(model, dict_model["supplementary"])
+            print("evaluate the model after pruning of amount", rate)
+            results_acc.append(TrainModel.evaluate(model, test_loader, config_attack))
+            results_ber.append(extract(model, dict_model["supplementary"])[1])
+        print("pruning_rate = ", pruning_rate)
+        print("results_acc = ", results_acc)
+        print("results_ber = ", results_ber)
 
     @staticmethod
     def overwriting_attack(config_embed, config_attack, config_data):

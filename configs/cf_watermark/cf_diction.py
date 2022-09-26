@@ -8,7 +8,7 @@ from copy import deepcopy
 # ************* watermarking MLP architecture ****************
 watermark_size = 256
 epochs_embed = 10000
-epoch_check = 10
+epoch_check = 30
 layer_name = "fc2"
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
@@ -28,7 +28,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "lambda": 1e-0,
                 "layer_name": layer_name,
 
-                "lr": 1e-4,
+                "lr": 1e-3,
                 "wd": 0,
                 "opt": "Adam",
                 "scheduler": "MultiStepLR",
@@ -44,7 +44,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "device": cf_mlp_dict["device"]
                 }
 
-epoch_attack = 12
+epoch_attack = 50
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + ".pth"
 
 cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
@@ -77,14 +77,20 @@ cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
                     "path_model": cf_mlp_embed["save_path"],
                     "watermark_size": watermark_size,
                     "amount": 0.9,
+                    "criterion": cf_mlp_dict["criterion"],
                     "save_path": "results/attacks/pruning/diction/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "architecture": cf_mlp_dict["architecture"],
+                    "device": cf_mlp_dict["device"],
                     }
 
-epoch_attack = 60
-watermark_size = 512
-save_path_attack = "_b" + "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)
+
+
+epoch_attack = 10
+watermark_size = 256
+epoch_check = 30
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)\
+                   + "_epc" + str(epoch_check)
 cf_mlp_attack_ow = {"configuration": cf_cnn_dict,
                     "database": cf_mlp_dict["database"],
                     "path_model": cf_mlp_embed["save_path"],
@@ -93,12 +99,17 @@ cf_mlp_attack_ow = {"configuration": cf_cnn_dict,
                     # Latent space parameters
                     "mean": 0.26,
                     "std": 0.1,
-                    "n_features": 512,
+                    "n_features": 512//64,
+                     "n_features_layer": 512,
                     "batch_size": 128,
-
                     "epochs": epoch_attack,
+                     "epoch_check": epoch_check,
+
+                    # Training parameters
+                    "lambda": 1,
                     "layer_name": layer_name,
                     "lr": 1e-3,
+
                     "wd": 0,
                     "scheduler": "MultiStepLR",
                     "architecture": cf_mlp_dict["criterion"],
@@ -138,7 +149,7 @@ cf_mlp_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 watermark_size = 256
 epochs_embed = 10000
 layer_name = "fc1"
-epoch_check = 10
+epoch_check = 30
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
 
@@ -157,13 +168,13 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "lambda": 1e-0,
                 "layer_name": layer_name,
 
-                "lr": 1e-4,
+                "lr": 1e-3,
                 "wd": 0,
                 "opt": "Adam",
                 "scheduler": "MultiStepLR",
                 "architecture": cf_cnn_dict['architecture'],
                 "momentum": 0,
-                "milestones": [300, 3000],
+                "milestones": [20, 3000],
                 "gamma": .1,
                 "criterion": cf_cnn_dict["criterion"],
                 "device": cf_cnn_dict["device"],
@@ -174,7 +185,8 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 }
 
 epoch_attack = 10
-save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
+                  str(epoch_check)
 
 cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
@@ -209,28 +221,36 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
                     "path_model": cf_cnn_embed["save_path"],
                     "watermark_size": watermark_size,
                     "amount": 0.8,
-
+                     "criterion": cf_cnn_dict["criterion"],
                     "architecture": cf_cnn_dict["architecture"],
                     "save_path": "results/attacks/pruning/diction/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
+                    "device": cf_cnn_dict["device"],
                     }
 
+
+
 layer_name = "fc1"
-epoch_attack = 100
+epoch_attack = 10
 watermark_size = 512
-save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_pt"
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)\
+                   + "_epc" + str(epoch_check)
 cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed["save_path"],
                     "watermark_size": watermark_size,
 
-                    # Latent space
+                   # Latent space parameters
                     "mean": 0.5,
                     "std": 0.2,
-                    "epochs": epoch_attack,
-                    "n_features": 512,
+                    "n_features": 512//64,
+                    "n_features_layer": 512,
                     "batch_size": 128,
+                    "epochs": epoch_attack,
+                     "epoch_check": epoch_check,
 
+                      # Training parameters
+                    "lambda": 1,
                     "layer_name": layer_name,
                     "lr": 1e-4,
                     "wd": 0,
@@ -253,6 +273,7 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "show_acc_epoch": False
                     }
 
+
 cf_cnn_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                      "train_watermarked": cf_watermarked,
                      "save_path": "results/attacks/pia/diction/" + cf_cnn_dict[
@@ -262,7 +283,7 @@ cf_cnn_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 # ************* watermarking Resnet18 architecture ****************
 watermark_size = 256
 epochs_embed = 1000
-epoch_check = 10
+epoch_check = 20
 layer_name = "view"
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
@@ -298,7 +319,8 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      }
 
 epoch_attack = 10
-save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
+                  str(epoch_check)
 
 cf_resnet18_attack_ft = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
@@ -331,27 +353,36 @@ cf_resnet18_attack_pr = {"configuration": cf_resnet18_dict,
                          "path_model": cf_resnet18_embed["save_path"] + ".pth",
                          "watermark_size": watermark_size,
                          "amount": 0.8,
+                         "criterion": cf_resnet18_dict["criterion"],
                          "architecture": cf_resnet18_dict["architecture"],
                          "save_path": "results/attacks/pruning/diction/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
+                             "device": cf_resnet18_dict["device"],
                          }
+
 
 layer_name = "view"
 epoch_attack = 100
 watermark_size = 512
-save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)
+epoch_check = 20
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)\
+                   + "_epc" + str(epoch_check)
 
 cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
                          "path_model": cf_resnet18_embed["save_path"] + ".pth",
                          "watermark_size": watermark_size,
-                         # Latent space
+                         # Latent space parameters
                          "mean": 0,
                          "std": 1,
-                         "n_features": 512,
+                          "n_features": 512//64,
+                        "n_features_layer": 512,
                          "batch_size": 10,
-
                          "epochs": epoch_attack,
+                          "epoch_check": epoch_check,
+
+                         # Training parameters
+                        "lambda": 1,
                          "layer_name": layer_name,
                          "lr": 1e-4,
                          "wd": 0,
@@ -371,6 +402,7 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "y_label": "BER/ACC",
                          "show_acc_epoch": False
                          }
+
 
 cf_resnet18_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                           "train_watermarked": cf_watermarked,
@@ -394,7 +426,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "epoch_check": epoch_check,
 
                      # Latent space parameters
-                     "batch_size": 32,
+                     "batch_size": 64,
                      "mean": 0,
                      "std": 1,
                      "n_features": 64//2,
@@ -402,7 +434,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "lambda": 1,
 
                      "layer_name": layer_name,
-                     "lr": 1e-4,
+                     "lr": 1e-3,
                      "wd": 0,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
@@ -418,8 +450,9 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "device": cf_mlp_riga_dict["device"]
                      }
 
-epoch_attack = 2
-save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + ".pth"
+epoch_attack = 50
+save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
+                  str(epoch_check)
 
 cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
                          "database": cf_mlp_riga_embed["database"],
@@ -470,8 +503,8 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_embed,
                          "watermark_size": watermark_size,
 
                          # Latent space parameters
-                         "mean": 0.26,
-                         "std": 0.1,
+                         "mean": 0,
+                         "std": 1,
                          "n_features": 64//2,
                          "n_features_layer": 64,
                          "batch_size": 32,

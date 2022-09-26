@@ -61,14 +61,24 @@ class Tests:
         print("Check the accuracy of the watermarked model")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
         print("Compute the BER from the original model (non watermarked)")
-        extract(init_model, dict_model["supplementary"])
+        _, ber = extract(init_model, dict_model["supplementary"])
+        print("BER = ", ber)
         print("Start fine-tuning")
-        for i in range(1, 4):
+        results_acc = []
+        results_ber = []
+        epochs = [50, 100, 150]
+        for ep in epochs:
             model_wat = TrainModel.fine_tune(model_wat, train_loader, test_loader, config_attack)
             # check the accuracy and BER
-            print(f"BER after finetuning {i * 50}")
-            extract(model_wat, dict_model["supplementary"])
-            TrainModel.evaluate(model_wat, test_loader, config_attack)
+            _, ber = extract(model_wat, dict_model["supplementary"])
+            acc = TrainModel.evaluate(model_wat, test_loader, config_attack)
+            print(f"ACC and BER after finetuning {ep}")
+            print("BER = ", ber, "ACC = ", acc)
+            results_acc.append(acc)
+            results_ber.append(ber)
+        print("epochs = ", epochs)
+        print("results_acc = ", results_acc)
+        print("results_ber = ", results_ber)
 
     @staticmethod
     def pruning_attack(config_embed, config_attack, config_data):
@@ -78,18 +88,21 @@ class Tests:
         dict_model = TrainModel.load_model(config_embed['save_path'])
         model_wat = dict_model["supplementary"]["model"]
         # fine tune the watermarked model
-        print("First check")
+        print("First check before pruning")
         TrainModel.evaluate(model_wat, test_loader, config_attack)
-        # results_acc = []
-        # results_ber = []
-        for i in range(10):
-            config_attack["amount"] = (i + 1) / 10
+        results_acc = []
+        results_ber = []
+        pruning_rate = [x / 10 for x in range(10)] + [0.95, 0.99, 1.]
+
+        for rate in pruning_rate:
+            config_attack["amount"] = rate
             model = pruning(model_wat, config_attack)
-            print("evaluate the model after pruning of amount", (i + 1) / 10)
-            TrainModel.evaluate(model, test_loader, config_attack)
-            extract(model, dict_model["supplementary"])
-        # print_sparsity(model)
-        # print(model)
+            print("evaluate the model after pruning of amount", rate)
+            results_acc.append(TrainModel.evaluate(model, test_loader, config_attack))
+            results_ber.append(extract(model, dict_model["supplementary"])[1])
+        print("pruning_rate = ", pruning_rate)
+        print("results_acc = ", results_acc)
+        print("results_ber = ", results_ber)
 
     @staticmethod
     def overwriting_attack(config_embed, config_attack, config_data):
@@ -103,7 +116,8 @@ class Tests:
         print("Evaluate the model before watermarking")
         TrainModel.evaluate(model_wat, test_loader, config_embed)
         print("Check BER of watermarked model")
-        extract(model_wat, dict_model["supplementary"])
+        _, ber = extract(model_wat, dict_model["supplementary"])
+        print("BER = ", ber)
         # changing the batch_size to 1
         """embed the watermark with DICTION"""
         model_attacked, ber = embed(model_wat, test_loader, train_loader, config_attack)
@@ -268,53 +282,5 @@ class Tests:
 
                 # update the progress bar
                 loop.set_description(f"Epoch [{epoch}/{epochs}]")
-                loop.set_postfix(loss=train_loss / (batch_idx + 1), acc=f"{epoch_acc/(batch_idx + 1):.3f}")
+                loop.set_postfix(loss=train_loss / (batch_idx + 1), acc=f"{epoch_acc / (batch_idx + 1):.3f}")
 
-
-    @staticmethod
-    def ftal_attack():
-        pass
-
-    @staticmethod
-    def rtal_attack():
-        pass
-
-    @staticmethod
-    def refit_attack():
-        pass
-
-    # @staticmethod
-    # def overwriting_attack(config_embed, config_attack, config_data):
-    #     """embedding """
-    #
-    #     """Get the model and data """
-    #     # Get model
-    #     init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
-    #     init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"] + ".pth")[0])
-    #     # Get data
-    #     train_loader, test_loader, attack_loader, remind_train_loader, attack_loader_size = \
-    #         Database.load_split_dataset_loaders(config_data)
-    #     # evaluate the model
-    #     print("evaluate the model before watermarking")
-    #     TrainModel.evaluate(init_model, test_loader, config_embed)
-    #     # changing the batch_size to 1
-    #     train_data = torch.tensor([]).cuda()
-    #     train_labels = torch.tensor([])
-    #     for idx_batch, data in enumerate(train_loader):
-    #         images, label = data
-    #         images = images.to(config_embed["device"])
-    #         tmp_data = torch.cat([img[None, :] for img in images])
-    #         train_data = torch.cat((train_data, tmp_data), 0)
-    #         train_labels = torch.cat((train_labels, label), 0)
-    #     """generate the watermark watermark"""
-    #     watermark = Random.get_rand_bits(config_attack["watermark_size"], 0., 1.)
-    #     watermark = torch.tensor(watermark).reshape(1, config_attack["watermark_size"])
-    #     print("watermark", watermark)
-    #     """generate matrix matrix_a"""
-    #     matrix_a = Random.generate_secret_matrix(config_attack["n_features"], config_attack["watermark_size"])
-    #     """embed the watermark with deepsign_x"""
-    #     model_wat, ber = embed(init_model, test_loader, train_loader, train_data, train_labels, matrix_a, watermark,
-    #                            config_attack)
-    #     print("evaluate the watermarked model")
-    #     acc = TrainModel.evaluate(model_wat, test_loader, config_embed)
-    #     return acc, ber

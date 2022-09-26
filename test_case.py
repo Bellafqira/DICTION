@@ -5,19 +5,19 @@ from copy import deepcopy
 from configs.cf_data.cf_data import cf_mnist_data, cf_cifar10_data
 
 #  ---------------Watermarking configurations ---------------
-# from configs.cf_watermark.cf_deepsigns import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
-#     cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_cnn_attack_ow, \
-#     cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_mlp_riga_embed, cf_mlp_riga_attack_ft, \
-#     cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, cf_mlp_riga_attack_pia, cf_mlp_attack_pia, cf_cnn_attack_pia, \
-#     cf_resnet18_attack_pia
-# from tests.tests_deepsigns import Tests
+from configs.cf_watermark.cf_deepsigns import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
+    cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_cnn_attack_ow, \
+    cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_mlp_riga_embed, cf_mlp_riga_attack_ft, \
+    cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, cf_mlp_riga_attack_pia, cf_mlp_attack_pia, cf_cnn_attack_pia, \
+    cf_resnet18_attack_pia
+from tests.tests_deepsigns import Tests
 
-from configs.cf_watermark.cf_diction import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
-    cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia, \
-    cf_cnn_attack_ow, cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_cnn_attack_pia, \
-    cf_resnet18_attack_pia, cf_mlp_riga_embed, cf_mlp_riga_attack_ft, cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, \
-    cf_mlp_riga_attack_pia
-from tests.tests_diction import Tests
+# from configs.cf_watermark.cf_diction import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
+#     cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia, \
+#     cf_cnn_attack_ow, cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_cnn_attack_pia, \
+#     cf_resnet18_attack_pia, cf_mlp_riga_embed, cf_mlp_riga_attack_ft, cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, \
+#     cf_mlp_riga_attack_pia
+# from tests.tests_diction import Tests
 
 # --------------- Models configuration ---------------
 from configs.cf_train.cf_cnn import cf_cnn_dict
@@ -25,24 +25,25 @@ from configs.cf_train.cf_mlp import cf_mlp_dict
 from configs.cf_train.cf_resnet18 import cf_resnet18_dict
 from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
 
+
 # --------------- Initiate configurations ---------------
 # #             **** MLP data, train and embedding ****
-config_train, config_data, config_embed = cf_mlp_dict, cf_mnist_data, cf_mlp_embed
-#             **** MLP  watermarking attacks ****
-config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia = \
-    cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia
+# config_train, config_data, config_embed = cf_mlp_dict, cf_mnist_data, cf_mlp_embed
+# #             **** MLP  watermarking attacks ****
+# config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia = \
+#     cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia
 
 # #             **** CNN data, train and embedding ****
 # config_train, config_data, config_embed = cf_cnn_dict, cf_cifar10_data, cf_cnn_embed
-# #             **** MLP  watermarking attacks ****
+# #             **** CNN  watermarking attacks ****
 # config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia =\
 #  cf_cnn_attack_ft, cf_cnn_attack_pr, cf_cnn_attack_ow, cf_cnn_attack_pia
 
 # #             **** Resnet18 data, train and embedding ****
-# config_train, config_data, config_embed = cf_resnet18_dict, cf_cifar10_data, cf_resnet18_embed
-# #             **** MLP  watermarking attacks ****
-# config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia =\
-#  cf_resnet18_attack_ft, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_resnet18_attack_pia
+config_train, config_data, config_embed = cf_resnet18_dict, cf_cifar10_data, cf_resnet18_embed
+#             **** Resnet18  watermarking attacks ****
+config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia =\
+ cf_resnet18_attack_ft, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_resnet18_attack_pia
 
 # #             **** MLP_RIGA data, train and embedding ****
 # config_train, config_data, config_embed = cf_mlp_riga_dict, cf_mnist_data, cf_mlp_riga_embed
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     # Tests.fine_tune_attack(config_embed, config_attack_ft, config_data)
 
     # # pruning
-    # Tests.pruning_attack(config_embed, config_attack_pr, config_data)
+    Tests.pruning_attack(config_embed, config_attack_pr, config_data)
 
     # # Overwriting
     # run GMM for DeepSigns
@@ -91,4 +92,4 @@ if __name__ == '__main__':
     # Tests.show_weights_distribution(config_embed, config_data)
 
     # # PIA Attack
-    Tests.pia_attack(config_data, config_embed, config_attack_pia)
+    # Tests.pia_attack(config_data, config_embed, config_attack_pia)

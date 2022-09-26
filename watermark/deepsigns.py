@@ -45,35 +45,6 @@ def gmm_load(n_features, n_components, path='idk'):
     return gmm, gmm_dict["x_fc"], gmm_dict["hist"], gmm_dict["nonzero"]
 
 
-# def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
-
-#     nb_samplers = int(len(x_train) * percent)
-
-#     indices = torch.cat([torch.where(y_gmm == t)[0] for t in watermarked_classes])
-
-#     ind = random.sample(range(indices.shape[0]), nb_samplers)
-
-#     key_index = indices[ind]
-
-#     x_key, y_key = x_train[key_index], y_train[key_index]
-
-#     return key_index, x_key, y_key
-
-
-# def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
-#     nb_samplers = int(len(x_train) * percent)
-#
-#     indices = torch.cat([torch.where(y_gmm == t)[0] for t in watermarked_classes])
-#
-#     ind = random.sample(range(indices.shape[0]), nb_samplers)
-#
-#     key_index = indices[ind]
-#
-#     x_key, y_key = x_train[key_index], y_train[key_index]
-#
-#     return key_index, x_key, y_key
-
-
 def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
     # what expect the Deepsigns paper
     nb_samplers = int(len(x_train) * percent)
@@ -102,6 +73,7 @@ def subset_training_data(watermarked_classes, x_train, y_gmm, y_train, percent):
 
     return x_key, y_key
 
+
 def get_trigger_set(gmm, x_fc, train_data, train_labels, watermarked_classes, percent):
     # Now let's get for each sample in X it's corresponding GMM class
     y_gmm = gmm.predict(x_fc)
@@ -113,7 +85,6 @@ def get_trigger_set(gmm, x_fc, train_data, train_labels, watermarked_classes, pe
 
 # Computing loss1
 def mu_loss1(x_fc, mu, mu_bar, watermarked_classes, y_key):
-
     index = torch.tensor([[i, j] for i in range(len(mu)) for j in range(len(mu_bar))])
 
     # increase the distance between carrier classes and non-carriers
@@ -130,14 +101,14 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
           watermarked_classes, config) -> object:
     # Generate the watermark
     watermark = 1. * torch.randint(0, 2, size=(config["nb_wat_classes"], config["watermark_size"]))
-    print("watermark", watermark)
+    # print("watermark", watermark)
     """generate matrix matrix_a"""
     matrix_a = Random.generate_secret_matrix(config["n_features"], config["watermark_size"])
 
     """"updating embed with config_embed"""
     model = deepcopy(init_model)
     nodes, _ = get_graph_node_names(init_model)
-    print(nodes)
+    # print(nodes)
     # extract the features of the given layer
     extractor = create_feature_extractor(model, [config["layer_name"]])
     criterion = config["criterion"]
@@ -151,7 +122,7 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
 
     optimizer = optim.Adam([
         {'params': model.parameters(), 'lr': config["lr"], 'weight_decay': config["wd"]},
-        {'params': model_deepSigns.parameters(), 'lr': 1e-1, 'weight_decay': 1e-4}
+        {'params': model_deepSigns.parameters(), 'lr': 1e-1, 'weight_decay': 1e-2}
     ], lr=config["lr"])
 
     acc = TrainModel.evaluate(model, test_loader, config)
@@ -176,7 +147,6 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
     key_loader = DataLoader(dataset=dataset_key, batch_size=len(x_key), shuffle=True)
 
     for epoch in range(config["epochs"]):
-        # read secret data
         train_loss = correct = total = 0
         loop = tqdm(train_loader, leave=True)
 
@@ -205,7 +175,7 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
             # λ1, λ2 control the trade of between WM embedding and the accuracy of the model
             y_pred = model(x_train)
             loss0 = criterion(y_pred, y_train)
-            loss1 = gmm_loss - 0 * mu_loss
+            loss1 = gmm_loss - 0.0001 * mu_loss
             loss2 = Metric.bce_(matrix_g, watermark)
             loss = loss0 + config["lambda_1"] * loss1 + config["lambda_2"] * loss2
 
@@ -227,10 +197,9 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
                                            f"/{total}]", loss2=f"{loss2:1.4f}", loss1=f"{loss1:1.4f}",
                              ber=f"{ber:1.3f}",
                              ber_=f"{ber_:1.3f}")
-        if (epoch + 1) % 20 == 0:
+        if epoch % 10 == 0:
             with torch.no_grad():
                 ber = _get_ber(matrix_g, watermark)
-
                 x_fc = stack_x_fc(extractor, x_key_, config["batch_size"], config)
                 _, ber_ = _extract(x_fc, y_key_, watermarked_classes, matrix_a, watermark, print_ber=False)
 
@@ -239,11 +208,11 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
                     f"epoch:{epoch}---loss: {loss.item():1.3f}---ber: {ber:1.3f}---ber_mean: {ber_:1.3f}---gmm_loss: "
                     f"{gmm_loss:1.4f}---mu_sep: {mu_loss:.3f}---acc: {acc}")
 
-        if ber_ == 0 and epoch % 20 == 0:
+        if ber_ == 0 and epoch >= config["epoch_check"]:
             print("saving!")
             supplementary = {'model': model, 'key_matrix': matrix_a, 'watermark': watermark,
                              'watermarked_classes': watermarked_classes,
-                             'key_loader': key_loader,  'ber': ber,
+                             'key_loader': key_loader, 'ber': ber,
                              "layer_name": config["layer_name"]}
             TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
             break

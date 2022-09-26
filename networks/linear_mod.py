@@ -22,22 +22,18 @@ class DeepSigns(nn.Module):
 class LinearMod(nn.Module):
     def __init__(self, config):
         super().__init__()
-        # self.matrix_a = nn.Parameter(2*torch.rand(size=(512, config["watermark_size"]))-1,
-        #                              requires_grad=True)
-        # self.var_param = nn.Parameter(torch.randn(size=(1, config["n_features"])),
-        #                               requires_grad=True)
-        self.fc = nn.Linear(config["n_features"], config["watermark_size"], bias=False)
-        self.fc1 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
-        # self.fc2 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
+        self.fc1 = nn.Linear(config["n_features"], 1024, bias=False)
+        self.fc2 = nn.Linear(1024, config["watermark_size"], bias=False)
+        # self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
         self.sig = nn.Sigmoid()
         self.relu = nn.ReLU()
+        self.th = nn.Tanh()
 
     def forward(self, x):
-        # matrix_g = nn.Sigmoid()(var_param @ self.matrix_a)
-        out = self.fc(x)
-        out = self.relu(out)
-        out = self.fc1(out)
+        out = self.fc1(x)
         out = self.sig(out)
-        # out = self.fc2(out)
+        out = self.fc2(out)
+        out = self.sig(out)
+        # out = self.fc3(out)
         # out = self.sig(out)
         return out
