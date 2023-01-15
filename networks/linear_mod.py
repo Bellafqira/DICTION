@@ -19,6 +19,43 @@ class DeepSigns(nn.Module):
         return f'var_param = {self.var_param.item()}'
 
 
+class Uchida(nn.Module):
+    def __init__(self, w):
+        super().__init__()
+        self.var_param = nn.Parameter(w, requires_grad=True)
+
+    def forward(self, matrix_a):
+        matrix_g = torch.nn.Sigmoid()(self.var_param @ matrix_a)
+        return matrix_g
+
+    def string(self):
+        """
+        Just like any class in Python, you can also define custom method on PyTorch modules
+        """
+        return f'var_param = {self.var_param.item()}'
+
+
+class EncResistant(nn.Module):
+    def __init__(self, config, weight_size):
+        super().__init__()
+        self.fc1 = nn.Linear(weight_size, 100, bias=False)
+        self.fc2 = nn.Linear(100, config["expansion_factor"] * weight_size, bias=False)
+        # self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
+        self.sig = nn.Sigmoid()
+        self.relu = nn.ReLU()
+        self.th = nn.Tanh()
+
+    def forward(self, theta_f, matrix_a):
+        out = self.fc1(theta_f)
+        out = self.relu(out)
+        out = self.fc2(out)
+        out = self.relu(out)
+        out = self.sig(out @ matrix_a)
+        # out = self.fc3(out)
+        # out = self.sig(out)
+        return out
+
+
 class LinearMod(nn.Module):
     def __init__(self, config):
         super().__init__()

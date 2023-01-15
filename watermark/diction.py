@@ -146,7 +146,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 
             if ber_ == 0:
                 print("saving... watermarked model ")
-                supplementary = {'model': model, 'key_matrix': linear_mod, 'watermark': watermark,
+                supplementary = {'model': model, 'matrix_a': linear_mod, 'watermark': watermark,
                                  'x_key': key_loader, 'y_key': y_key, 'ber': ber,
                                  "layer_name": config["layer_name"], "indices": indices}
                 TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
@@ -165,7 +165,7 @@ def extract(model_watermarked, supp):
         act = torch.index_select(x_fc.cpu(), 1, torch.tensor(supp["indices"]))
         act = torch.stack([torch.mean(act, dim=0)])
         # act = nn.functional.normalize(act).cpu()
-        b_ext, ber = _extract(act.cuda(), supp["key_matrix"], supp["watermark"])
+        b_ext, ber = _extract(act.cuda(), supp["matrix_a"], supp["watermark"])
         ber_total += b_ext
     ber_total = 1. * (ber_total > 0.5)
     ber = Metric.get_ber(ber_total, supp["watermark"])

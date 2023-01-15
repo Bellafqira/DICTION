@@ -102,10 +102,11 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
     # Generate the watermark
     watermark = 1. * torch.randint(0, 2, size=(config["nb_wat_classes"], config["watermark_size"]))
     # print("watermark", watermark)
-    """generate matrix matrix_a"""
+
+    # generate matrix matrix_a
     matrix_a = Random.generate_secret_matrix(config["n_features"], config["watermark_size"])
 
-    """"updating embed with config_embed"""
+    # updating embed with config_embed
     model = deepcopy(init_model)
     nodes, _ = get_graph_node_names(init_model)
     # print(nodes)
@@ -210,7 +211,7 @@ def embed(train_loader, init_model, test_loader, x_key, y_key, gmm,
 
         if ber_ == 0 and epoch >= config["epoch_check"]:
             print("saving!")
-            supplementary = {'model': model, 'key_matrix': matrix_a, 'watermark': watermark,
+            supplementary = {'model': model, 'matrix_a': matrix_a, 'watermark': watermark,
                              'watermarked_classes': watermarked_classes,
                              'key_loader': key_loader, 'ber': ber,
                              "layer_name": config["layer_name"]}
@@ -224,7 +225,7 @@ def extract(model_watermarked, supp):
     extractor = create_feature_extractor(model_watermarked, [supp["layer_name"]])
     x_key, y_key = next(iter(supp["key_loader"]))
     x_fc = extractor(x_key)[supp["layer_name"]]
-    return _extract(x_fc, y_key, supp["watermarked_classes"], supp["key_matrix"], supp["watermark"],
+    return _extract(x_fc, y_key, supp["watermarked_classes"], supp["matrix_a"], supp["watermark"],
                     print_ber=True)
 
 

@@ -17,7 +17,7 @@ class GaussianMixture(torch.nn.Module):
         Initializes the model and brings all tensors into their required shape.
         The class expects data to be fed as a flat tensor in (n, d).
         The class owns:
-            x:              torch.Tensor (n, 1, d)
+            theta_f:              torch.Tensor (n, 1, d)
             mu:             torch.Tensor (1, k, d)
             var:            torch.Tensor (1, k, d)
             pi:             torch.Tensor (1, k, 1)
@@ -84,7 +84,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Bayesian information criterion for a batch of samples.
         args:
-            x:      torch.Tensor (n, d) or (n, 1, d)
+            theta_f:      torch.Tensor (n, d) or (n, 1, d)
         returns:
             bic:    float
         """
@@ -102,7 +102,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Fits model to the data.
         args:
-            x:          torch.Tensor (n, d) or (n, k, d)
+            theta_f:          torch.Tensor (n, d) or (n, k, d)
         options:
             delta:      float
             n_iter:     int
@@ -148,7 +148,7 @@ class GaussianMixture(torch.nn.Module):
         Assigns input data to one of the mixture components by evaluating the likelihood under each.
         If probs=True returns normalized probabilities of class membership.
         args:
-            x:          torch.Tensor (n, d) or (n, 1, d)
+            theta_f:          torch.Tensor (n, d) or (n, 1, d)
             probs:      bool
         returns:
             p_k:        torch.Tensor (n, k)
@@ -169,7 +169,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Returns normalized probabilities of class membership.
         args:
-            x:          torch.Tensor (n, d) or (n, 1, d)
+            theta_f:          torch.Tensor (n, d) or (n, 1, d)
         returns:
             y:          torch.LongTensor (n)
         """
@@ -179,7 +179,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Computes log-likelihood of samples under the current model.
         args:
-            x:          torch.Tensor (n, d) or (n, 1, d)
+            theta_f:          torch.Tensor (n, d) or (n, 1, d)
         returns:
             score:      torch.LongTensor (n)
         """
@@ -192,7 +192,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Returns a tensor with dimensions (n, k, 1), which indicates the log-likelihood that samples belong to the k-th Gaussian.
         args:
-            x:            torch.Tensor (n, d) or (n, 1, d)
+            theta_f:            torch.Tensor (n, d) or (n, 1, d)
         returns:
             log_prob:     torch.Tensor (n, k, 1)
         """
@@ -212,7 +212,7 @@ class GaussianMixture(torch.nn.Module):
         Also returns the mean of the mean of the logarithms of the probabilities (as is done in sklearn).
         This is the so-called expectation step of the EM-algorithm.
         args:
-            x:              torch.Tensor (n,d) or (n, 1, d)
+            theta_f:              torch.Tensor (n,d) or (n, 1, d)
         returns:
             log_prob_norm:  torch.Tensor (1)
             log_resp:       torch.Tensor (n, k, 1)
@@ -230,7 +230,7 @@ class GaussianMixture(torch.nn.Module):
         """
         From the log-probabilities, computes new parameters pi, mu, var (that maximize the log-likelihood). This is the maximization step of the EM-algorithm.
         args:
-            x:          torch.Tensor (n, d) or (n, 1, d)
+            theta_f:          torch.Tensor (n, d) or (n, 1, d)
             log_resp:   torch.Tensor (n, k, 1)
         returns:
             pi:         torch.Tensor (1, k, 1)
@@ -257,7 +257,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Performs one iteration of the expectation-maximization algorithm by calling the respective subroutines.
         args:
-            x:          torch.Tensor (n, 1, d)
+            theta_f:          torch.Tensor (n, 1, d)
         """
         _, log_resp = self._e_step(x)
         pi, mu, var = self._m_step(x, log_resp)
@@ -270,7 +270,7 @@ class GaussianMixture(torch.nn.Module):
         """
         Computes the log-likelihood of the data under the model.
         args:
-            x:                  torch.Tensor (n, 1, d)
+            theta_f:                  torch.Tensor (n, 1, d)
             sum_data:           bool
         returns:
             score:              torch.Tensor (1)
