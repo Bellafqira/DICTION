@@ -26,8 +26,12 @@ from configs.cf_data.cf_data import cf_mnist_data, cf_cifar10_data
 # from tests.tests_uchida import Tests
 
 # *********** Enc_Resistant ***********
-from configs.cf_watermark.cf_enc_resistant import cf_mlp_embed, cf_cnn_embed
-from tests.tests_enc_resistant import Tests
+# from configs.cf_watermark.cf_enc_resistant import cf_mlp_embed, cf_cnn_embed
+# from tests.tests_enc_resistant import Tests
+
+# *********** RIGA ***********
+from configs.cf_watermark.cf_riga import cf_mlp_embed
+from tests.tests_riga import Tests
 
 # --------------- Models configuration ---------------
 from configs.cf_train.cf_cnn import cf_cnn_dict
@@ -38,14 +42,14 @@ from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
 
 # --------------- Initiate configurations ---------------
 # # #             **** MLP data, train and embedding ****
-# config_train, config_data, config_embed = cf_mlp_dict, cf_mnist_data, cf_mlp_embed
+config_train, config_data, config_embed = cf_mlp_dict, cf_mnist_data, cf_mlp_embed
 #             **** MLP  watermarking attacks ****
 # uncomment later
 # config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia = \
 #     cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia
 
 # #             **** CNN data, train and embedding ****
-config_train, config_data, config_embed = cf_cnn_dict, cf_cifar10_data, cf_cnn_embed
+# config_train, config_data, config_embed = cf_cnn_dict, cf_cifar10_data, cf_cnn_embed
 # #             **** CNN  watermarking attacks ****
 # config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia =\
 #  cf_cnn_attack_ft, cf_cnn_attack_pr, cf_cnn_attack_ow, cf_cnn_attack_pia
