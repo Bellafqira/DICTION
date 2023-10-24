@@ -32,7 +32,7 @@ torchvision~=0.12.0
 tqdm~=4.60.0
 
 # License :
-All codes are provided for research purposes only. When using any code in this project, we would appreciate it if you could refer to this project.
+When using any code in this project, we would appreciate it if you could refer to this project.
 
 # Contact :
 Please send an email to reda.bellafqira@imt-atlantique.fr if you have any questions.
