@@ -6,13 +6,13 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.models.feature_extraction import get_graph_node_names, create_feature_extractor
 from tqdm import tqdm
-from networks.customTensorDataset import CustomTensorDataset
 from networks.linear_mod import LinearMod
 from util.metric import Metric
+
 from PIL import Image, ImageDraw, ImageFont
 
 # Check Device configuration
-from util.util import TrainModel, Random, AddGaussianNoise, AddWhiteSquareTransform
+from util.util import TrainModel, Random, AddGaussianNoise, AddWhiteSquareTransform, CustomTensorDataset
 
 
 def embed(init_model, test_loader, train_loader, config) -> object:

@@ -29,7 +29,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "start_y": 0,  # the y coordinate of the square to be added to the trigger set
                 "square_value": 1,  # the value of the square to be added to the trigger set
 
-                "n_features": 0.1,  # the percentage of features to be used in the watermarking process
+                "n_features": 0.5,  # the percentage of features to be used in the watermarking process
                 "lambda": 1e-0,  # the regularization parameter to train the projection model
                 "layer_name": layer_name,  # the layer name to be watermarked
 
@@ -39,7 +39,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "scheduler": "MultiStepLR",
                 "architecture": cf_mlp_dict["architecture"],
                 "momentum": 0,
-                "milestones": [100, 1000],
+                "milestones": [20, 30],
                 "gamma": 0.1,
                 "criterion": cf_mlp_dict["criterion"],
                 "device": cf_mlp_dict["device"],

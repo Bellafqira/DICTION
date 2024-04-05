@@ -11,13 +11,9 @@ import numpy as np
 from tqdm import tqdm
 
 from attacks.pruning import pruning
-from networks.customTensorDataset import CustomTensorDataset
 from networks.piadetector import PiaDetector
 from util.metric import Metric
-from util.util import TrainModel, Database, Util
-
-from scipy.stats import ks_2samp, cramervonmises_2samp
-
+from util.util import TrainModel, Database, Util, CustomTensorDataset
 from watermark.deepsigns import gmm_compute, gmm_load
 
 

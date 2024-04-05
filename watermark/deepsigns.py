@@ -7,12 +7,10 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.models.feature_extraction import get_graph_node_names, create_feature_extractor
 
-import util.util
-from networks.customTensorDataset import CustomTensorDataset
 from networks.linear_mod import DeepSigns
 from util.gmm import GaussianMixture
 from util.metric import Metric
-from util.util import TrainModel, Random
+from util.util import TrainModel, Random, CustomTensorDataset
 import random
 from tqdm import tqdm
 
