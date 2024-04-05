@@ -3,8 +3,8 @@
 source venv/bin/activate
 
 methods=("DICTION") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT")
-models=("RESNET18") # values: ("MLP", "CNN", "RESNET18", "MLP_RIGA)
-operations=("SHOW") #  values: ("WATERMARKING", "TRAIN", "FINE_TUNING", "OVERWRITING", "PRUNING", "SHOW", "PIA")
+models=("MLP") # values: ("MLP", "CNN", "RESNET18", "MLP_RIGA)
+operations=("WATERMARKING") #  values: ("WATERMARKING", "TRAIN", "FINE_TUNING", "OVERWRITING", "PRUNING", "SHOW", "PIA")
 
 for method in "${methods[@]}"; do
     for model in "${models[@]}"; do
