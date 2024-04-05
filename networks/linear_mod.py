@@ -36,14 +36,12 @@ class Uchida(nn.Module):
 
 
 class EncResistant(nn.Module):
-    def __init__(self, config, weight_size):
+    def __init__(self, expansion_factor, weight_size):
         super().__init__()
         self.fc1 = nn.Linear(weight_size, 100, bias=False)
-        self.fc2 = nn.Linear(100, config["expansion_factor"] * weight_size, bias=False)
-        # self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
+        self.fc2 = nn.Linear(100, expansion_factor * weight_size, bias=False)
         self.sig = nn.Sigmoid()
         self.relu = nn.ReLU()
-        self.th = nn.Tanh()
 
     def forward(self, theta_f, matrix_a):
         out = self.fc1(theta_f)
@@ -51,12 +49,10 @@ class EncResistant(nn.Module):
         out = self.fc2(out)
         out = self.relu(out)
         out = self.sig(out @ matrix_a)
-        # out = self.fc3(out)
-        # out = self.sig(out)
         return out
 
 
-class Riga_det(nn.Module):
+class RigaDet(nn.Module):
     def __init__(self, weights_size):
         super().__init__()
         self.fc1 = nn.Linear(weights_size, 100, bias=False)
@@ -76,7 +72,7 @@ class Riga_det(nn.Module):
         return out
 
 
-class Riga_ext(nn.Module):
+class RigaExt(nn.Module):
     def __init__(self, config, weights_size):
         super().__init__()
         self.fc1 = nn.Linear(weights_size, 100, bias=False)
@@ -100,9 +96,10 @@ class Riga_ext(nn.Module):
 class LinearMod(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.fc1 = nn.Linear(config["n_features"], 1024, bias=False)
-        self.fc2 = nn.Linear(1024, config["watermark_size"], bias=False)
-        # self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"], bias=False)
+        self.fc1 = nn.Linear(config["n_features"], config["watermark_size"])
+        self.fc2 = nn.Linear(512, config["watermark_size"])
+        self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"])
+
         self.sig = nn.Sigmoid()
         self.relu = nn.ReLU()
         self.th = nn.Tanh()
@@ -110,9 +107,8 @@ class LinearMod(nn.Module):
     def forward(self, x):
         out = self.fc1(x)
         out = self.sig(out)
-        out = self.fc2(out)
-        out = self.sig(out)
+        # out = self.fc2(out)
+        # out = self.sig(out)
         # out = self.fc3(out)
         # out = self.sig(out)
         return out
-

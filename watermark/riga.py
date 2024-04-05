@@ -4,7 +4,7 @@ import torch
 from torch import optim, nn
 from tqdm import tqdm
 
-from networks.linear_mod import Uchida, Riga_ext, Riga_det
+from networks.linear_mod import Uchida, RigaExt, RigaDet
 from util.metric import Metric
 from util.util import Random, TrainModel
 
@@ -22,8 +22,8 @@ def embed(init_model, test_loader, train_loader, config) -> object:
     weights_selected_layer = [param for name, param in model.named_parameters() if name == config["layer_name"]]
     init_w = torch.flatten(weights_selected_layer[0].mean(0)).clone()
 
-    model_ext = Riga_ext(config, len(init_w))
-    model_det = Riga_det(len(init_w))
+    model_ext = RigaExt(config, len(init_w))
+    model_det = RigaDet(len(init_w))
 
     model_det = model_det.cuda()
     model_ext = model_ext.cuda()

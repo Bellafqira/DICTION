@@ -1,3 +1,4 @@
+import os
 import itertools as it
 import random
 from copy import deepcopy
@@ -247,6 +248,9 @@ class TrainModel:
             'epoch': epoch,
             'supplementary': supplementary
         }
+        savedir = os.path.dirname(path)
+        if not(os.path.exists(savedir)) :
+            os.makedirs(savedir)
         torch.save(state, path)
 
     @staticmethod
@@ -302,3 +306,33 @@ class TrainModel:
         else:
             raise Exception("Unknown optimizer")
         return optimizer
+
+
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, input_tensor):
+        return torch.randn(input_tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
+class AddWhiteSquareTransform:
+    def __init__(self, square_size=20, start_x=30, start_y=40):
+        self.square_size = square_size
+        self.start_x = start_x
+        self.start_y = start_y
+
+    def __call__(self, x):
+        # Assuming x is a single image tensor of shape (C, H, W)
+        C, H, W = x.size()
+        white_square = torch.ones((C, self.square_size, self.square_size))
+        if self.start_x + self.square_size <= H and self.start_y + self.square_size <= W:
+            x[:, self.start_x:self.start_x + self.square_size,
+            self.start_y:self.start_y + self.square_size] = 1 # white_square
+        else:
+            raise ValueError("Square position and size exceed image dimensions.")
+        return x

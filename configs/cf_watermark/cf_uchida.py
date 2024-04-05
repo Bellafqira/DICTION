@@ -74,3 +74,7 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "criterion": cf_cnn_dict["criterion"],
                 "device": cf_cnn_dict["device"],
                 }
+
+# To fill in test prerequisites 
+cf_mlp_dict = {}, {}, {}
+cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_mlp_attack_pia = {}, {}, {}, {}

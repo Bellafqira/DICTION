@@ -12,7 +12,7 @@ criterion = nn.CrossEntropyLoss()
 epochs = 50
 architecture = "MLP"
 
-cf_mlp_dict = {"lr": 1e-4, "epochs": epochs, "wd": 0, "opt": "Adam",
+cf_mlp_dict = {"lr": 1e-4, "epochs": epochs, "wd": 0, "opt": "Adam", "batch_size": batch_size,
                "architecture": architecture, "milestones": [25, 45], "gamma": 0.1, "criterion": criterion,
                "scheduler": "MultiStepLR",
                "device": device,
