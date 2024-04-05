@@ -149,17 +149,23 @@ class Tests:
         b_ext_5, ber_5 = self.extract(model_wat, dict_model_attacked["supplementary"])
         b_ext_6, ber_6 = self.extract(model_wat, dict_model["supplementary"])
 
+        print(f"BER_1 (attacked model with overwrite projection model): {ber_1}")
+        print(f"BER_2 (attacked model with watermark projection model): {ber_2}")
+        print(f"BER_3 (original model with overwrite projection model): {ber_3}")
+        print(f"BER_4 (original model with watermark projection model): {ber_4}")
+        print(f"BER_5 (watermarked model with overwrite projection model): {ber_5}")
+        print(f"BER_6 (watermarked model with watermark projection model): {ber_6}")
+
         # b_ext_1 = tensor_vector_to_image(b_ext_1) # model_over + \theta prime
         # b_ext_2 = tensor_vector_to_image(b_ext_2) # model_over + \theta
         # b_ext_3 = tensor_vector_to_image(b_ext_3) # model_orig + \theta prime
         # b_ext_4 = tensor_vector_to_image(b_ext_4) # model_orig + \theta
         # b_ext_5 = tensor_vector_to_image(b_ext_5) # model_wat + \theta prime
         # b_ext_6 = tensor_vector_to_image(b_ext_6) # model_wat + \theta
+        # print(f"list of bers", ber_1, ber_2, ber_3, ber_4, ber_5, ber_6)
 
-        print(f"list of bers", ber_1, ber_2, ber_3, ber_4, ber_5, ber_6)
 
         # images = [b_ext_1, b_ext_2, b_ext_3, b_ext_4, b_ext_5, b_ext_6]
-
         # display_images(images)
         # print("watermark 1,", b_ext_1)
         # print("watermark 2,", b_ext_2)
@@ -292,8 +298,8 @@ class Tests:
         extractor_init = create_feature_extractor(model_init, [layer_name])
         extractor_wat = create_feature_extractor(model_wat, [layer_name])
 
-        # x_train, _ = next(iter(train_loader))
-        x_train = x_key
+        x_train, _ = next(iter(train_loader)) # x
+        # x_train = x_key
 
         # Get activation distributions
         act_init = extractor_init(x_train.cuda())[layer_name]
@@ -304,7 +310,6 @@ class Tests:
         # Compute activation distribution stats
         act_init_mean, act_init_std = torch.mean(act_init).item(), torch.std(act_init).item()
         act_wat_mean, act_wat_std = torch.mean(act_wat).item(), torch.std(act_wat).item()
-
 
         # Plot distributions
         bins = list(np.arange(-2, 4, 0.2))
@@ -330,7 +335,7 @@ class Tests:
         # Plot model parameter distributions
         bins = list(np.arange(-1, 2, 0.1))
         for (name_init, param_init), (name, param) in zip(model_init.named_parameters(), model_wat.named_parameters()):
-            print(name_init)
+            # print(name_init)
             if name == layer_name + '.weight' or name == "layer4.1.conv2.weight":
                 # Initial
                 ax3.hist(torch.flatten(param_init.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')

@@ -1,24 +1,7 @@
 import os
 from copy import deepcopy
-import importlib
-import random
-import torch
 from argparse import ArgumentParser
 import datetime
-
-# Specify test scenario
-parser = ArgumentParser()
-parser.add_argument("--method", type=str, default="DICTION")
-parser.add_argument("--model", type=str, default="MLP")
-parser.add_argument("--operation", type=str, default="TRAIN")
-# parser.add_argument("--train_model", action='store_true')
-args = parser.parse_args()
-method = args.method
-model = args.model
-operation = args.operation
-
-config_train = config_data = config_embed = config_attack_ft = config_attack_pr = config_attack_ow = \
-    config_attack_pia = None
 
 # --------------- Data configuration ---------------
 from configs.cf_data.cf_data import cf_mnist_data, cf_cifar10_data
@@ -29,14 +12,31 @@ from configs.cf_train.cf_mlp import cf_mlp_dict
 from configs.cf_train.cf_resnet18 import cf_resnet18_dict
 from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
 
+# --------------- Default tests configuration ---------------
+from tests.tests_common import Tests
+
+# Specify test scenario
+parser = ArgumentParser()
+parser.add_argument("--method", type=str, default="DICTION")
+parser.add_argument("--model", type=str, default="MLP")
+parser.add_argument("--operation", type=str, default="TRAIN")
+args = parser.parse_args()
+method = args.method
+model = args.model
+operation = args.operation
+
 #  ---------------Watermarking configurations ---------------
 match method:
     case 'DEEPSIGNS':
-        from configs.cf_watermark.cf_deepsigns import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
-            cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft, cf_mlp_attack_pr, cf_mlp_attack_ow, cf_cnn_attack_ow, \
-            cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow, cf_mlp_riga_embed, cf_mlp_riga_attack_ft, \
-            cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, cf_mlp_riga_attack_pia, cf_mlp_attack_pia, cf_cnn_attack_pia, \
-            cf_resnet18_attack_pia
+        from configs.cf_watermark.cf_deepsigns import (cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
+                                                       cf_resnet18_attack_ft, cf_mlp_embed, cf_mlp_attack_ft,
+                                                       cf_mlp_attack_pr, cf_mlp_attack_ow,
+                                                       cf_cnn_attack_ow, \
+                                                       cf_cnn_attack_pr, cf_resnet18_attack_pr, cf_resnet18_attack_ow,
+                                                       cf_mlp_riga_embed, cf_mlp_riga_attack_ft, \
+                                                       cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow,
+                                                       cf_mlp_riga_attack_pia, cf_mlp_attack_pia, cf_cnn_attack_pia, \
+                                                       cf_resnet18_attack_pia)
 
     case 'DICTION':
         from configs.cf_watermark.cf_diction import cf_cnn_embed, cf_cnn_attack_ft, cf_resnet18_embed, \
@@ -61,6 +61,8 @@ match method:
             cf_mlp_riga_attack_pia
     case 'RIGA':
         from configs.cf_watermark.cf_riga import cf_mlp_embed
+    case _:
+        raise ValueError(f"Method {method} not found")
 
 # --------------- Model configurations ---------------
 match model:
@@ -80,11 +82,11 @@ match model:
         config_train, config_data, config_embed = cf_mlp_riga_dict, cf_mnist_data, cf_mlp_riga_embed
         config_attack_ft, config_attack_pr, config_attack_ow, config_attack_pia = \
             cf_mlp_riga_attack_ft, cf_mlp_riga_attack_pr, cf_mlp_riga_attack_ow, cf_mlp_riga_attack_pia
+    case _:
+        raise ValueError(f"Model {model} not found")
 
-# --------------- Default tests configuration ---------------
-from tests.tests_common import Tests
+#  --------------- Tests configuration ---------------
 _tests = Tests(method, model)
-
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 #  --------------- Main  ---------------
@@ -120,6 +122,8 @@ if __name__ == '__main__':
             ber = ber + temp_ber
         print("acc=", acc / nb_run)
         print("ber=", ber / nb_run)
+
+        # Compute the average runtime for the watermarking process and save it in a file
 
         # with open("runtimes.txt", "a+") as f :
         #     f.write(f"\nRuntimes for {model}\n")

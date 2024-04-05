@@ -23,15 +23,17 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "batch_size": int(cf_mlp_dict["batch_size"] * 0.5),  # the number of samples of trigger set in a batch
                 "mean": 0,  # the mean of the latent space
                 "std": 1,  # the standard deviation of the latent space
+
                 "square_size": 5,  # the size of the square to be added to the trigger set
                 "start_x": 0,  # the x coordinate of the square to be added to the trigger set
                 "start_y": 0,  # the y coordinate of the square to be added to the trigger set
                 "square_value": 1,  # the value of the square to be added to the trigger set
-                "n_features": 0.5,  # the percentage of features to be used in the watermarking process
+
+                "n_features": 0.1,  # the percentage of features to be used in the watermarking process
                 "lambda": 1e-0,  # the regularization parameter to train the projection model
                 "layer_name": layer_name,  # the layer name to be watermarked
 
-                "lr": 1e-3,  # learning rate to train the target model
+                "lr": 1e-4,  # learning rate to train the target model
                 "wd": 0,    # weight decay to train the target model
                 "opt": "Adam",  # optimizer
                 "scheduler": "MultiStepLR",
