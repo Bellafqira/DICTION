@@ -1,57 +1,39 @@
-import torch.nn.utils.prune as prune
 import torch
+from torch.nn.utils import prune
 from copy import deepcopy
 
 
-def pruning(model_init, config_attack):
-    """Pruning function with pytorch
-    :param model_init: model to prune
-    :param config_attack:
-    :return pruned model
+def pruning(init_model, amount):
     """
-    model = deepcopy(model_init)
+    Prune the given model's parameters, including weights and biases across all layers
+    that support these parameters, such as Conv2d, Linear, and BatchNorm layers.
 
-    for module in model.modules():
-        if isinstance(module, torch.nn.modules.conv.Conv2d) or isinstance(module, torch.nn.modules.Linear):
-            prune.l1_unstructured(module, 'weight', config_attack["amount"])
-            prune.remove(module, 'weight')
+    Args:
+        init_model (torch.nn.Module): The model to prune.
+        amount (double): pruning parameters such as "amount".
 
-    sum_weights = 0
-    sum_nelemnt = 0
-    for name, param in model.named_parameters():
+    Returns:
+        torch.nn.Module: The pruned model.
+    """
+    # Create a deep copy of the model to keep the original model unchanged.
+    model = deepcopy(init_model)
+
+    # Apply pruning to all layers with 'weight' and 'bias' parameters.
+    for name, module in model.named_modules():
+        if hasattr(module, 'weight') and module.weight is not None:
+            prune.l1_unstructured(module, name='weight', amount=amount)
+            prune.remove(module, 'weight')  # Make pruning permanent
+        if hasattr(module, 'bias') and module.bias is not None:
+            prune.l1_unstructured(module, name='bias', amount=amount)
+            prune.remove(module, 'bias')  # Make pruning permanent
+
+    # Calculate and print the sparsity of the model.
+    sum_weights, sum_elements = 0, 0
+    for _, param in model.named_parameters():
         sum_weights += float(torch.sum(param == 0))
-        sum_nelemnt += float(param.nelement())
+        sum_elements += float(param.nelement())
 
-    print("Sparsity in the model: {:.2f}%".format(100. * sum_weights / sum_nelemnt))
+    sparsity = 100. * sum_weights / sum_elements
+    print(f"Sparsity in the model: {sparsity:.2f}%")
 
     return model
-
-
-def print_sparsity(model):
-    """show the sparsity of a model
-    :param model
-    :return print the sparsity of the model
-    """
-    print("Sparsity in fc1.weight: {:.2f}%".format(100. * float(torch.sum(model.fc1.weight == 0)) /
-                                                   float(model.fc1.weight.nelement())
-                                                   )
-          )
-    print(
-        "Sparsity in fc2.weight: {:.2f}%".format(
-            100. * float(torch.sum(model.fc2.weight == 0))
-            / float(model.fc2.weight.nelement())
-        )
-    )
-
-    print(
-        "Global sparsity: {:.2f}%".format(
-            100. * float(
-                torch.sum(model.fc1.weight == 0)
-                + torch.sum(model.fc2.weight == 0)
-            )
-            / float(
-                model.fc1.weight.nelement()
-                + model.fc2.weight.nelement()
-            )
-        )
-    )
