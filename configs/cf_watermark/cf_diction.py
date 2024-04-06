@@ -434,8 +434,8 @@ cf_resnet18_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 # ************* watermarking MLP_RIGA architecture ****************
 watermark_size = 256
 epochs_embed = 1000
-layer_name = "conv1"  # "conv1", "flatten", "fc2"
-epoch_check = 30
+layer_name = "fc2"  # "conv1", "flatten", "fc2"
+epoch_check = 50
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
 
@@ -449,15 +449,18 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "batch_size": int(cf_mlp_riga_dict["batch_size"]*0.5),
                      "mean": 0,
                      "std": 1,
+                     # the size of the square to be added to the trigger set and its position
                      "square_size": 5,
                      "start_x": 0,
                      "start_y": 0,
                      "square_value": 1,
-                     "n_features": 0.5,
-                     "lambda": 1,
 
+                     "n_features": 0.9, # the percentage of features to be used in the watermarking process
                      "layer_name": layer_name,
-                     "lr": 1e-3,
+
+                     "lambda": 1, # the regularization parameter to train the projection model
+
+                     "lr": 1e-4,
                      "wd": 0,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
@@ -467,7 +470,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "save_path": "results/watermarked_models/diction/" + cf_mlp_riga_dict['architecture'].lower() + "/"
                                   + save_path_embed + ".pth",
                      "momentum": 0,
-                     "milestones": [100, 1000],
+                     "milestones": [30, 1000],
                      "gamma": 0.1,
                      "criterion": cf_mlp_riga_dict["criterion"],
                      "device": cf_mlp_riga_dict["device"]
@@ -491,8 +494,8 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
                          "save_path": "results/attacks/finetuning/diction/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
-                         "milestones": [100, 2000],
-                         "gamma": 0,
+                         "milestones": [20, 50],
+                         "gamma": 0.1,
                          "criterion": cf_mlp_riga_dict["criterion"],
                          "device": cf_mlp_riga_dict["device"],
                          "save_fig_path": "results/attacks/finetuning/diction/" + cf_mlp_riga_dict[
