@@ -65,7 +65,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
     criterion = config["criterion"]
     optimizer = optim.Adam([
         {'params': model.parameters(), 'lr': config["lr"], 'weight_decay': config["wd"]},
-        {'params': linear_mod.parameters(), 'lr': 1e-2, 'weight_decay': 0}
+        {'params': linear_mod.parameters(), 'lr': 1e-2, 'weight_decay': 1e-4 }
     ], lr=config["lr"])
     scheduler = TrainModel.get_scheduler(optimizer, config)
 
@@ -92,13 +92,13 @@ def embed(init_model, test_loader, train_loader, config) -> object:
             act_wat = extractor_wat(x_key)[config["layer_name"]]
             act_wat = act_wat.view(act_wat.shape[0], -1)
             act_wat = act_wat[:, torch.tensor(indices).cuda()]
-            # act_wat = torch.mean(act_wat, dim=0)
+            # act_wat = torch.mean(act_wat, dim=0, keepdim=True)
 
             # Get activation maps of the original model
             act_orig = extractor_orig(x_key)[config["layer_name"]]
             act_orig = act_orig.view(act_orig.shape[0], -1)
             act_orig = act_orig[:, torch.tensor(indices).cuda()]
-            # act_orig = torch.mean(act_orig, dim=0)
+            # act_orig = torch.mean(act_orig, dim=0, keepdim=True)
 
             # Get the output of the projection model
             # watermark_out = linear_mod(act_wat.repeat(x_key_len, 1))
@@ -114,9 +114,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
             l_proj = l_wat + l_wat_orig
 
             l_global = l_main_task + config["lambda"] * l_proj
-
-            # + Metric.coupling_regularization(model, init_model, lambda_coupling=0.001))
-            #
+                        # + Metric.coupling_regularization(model, init_model, lambda_coupling=1e-5))
 
             assert l_global.requires_grad == True, 'broken computational graph :/'
 
@@ -157,10 +155,11 @@ def embed(init_model, test_loader, train_loader, config) -> object:
                     f"---param_var_loss: "
                     f"{l_proj:1.4f}---acc: {acc}")
 
+            # 'x_key': key_loader,
             if ber_ == 0:
                 print("saving... watermarked model! ")
                 supplementary = {'model': model, 'matrix_a': linear_mod, 'watermark': watermark,
-                                 'x_key': key_loader, 'y_key': y_key, 'ber': ber,
+                                 'x_key': x_key, 'y_key': y_key, 'ber': ber,
                                  "layer_name": config["layer_name"], "indices": indices}
                 TrainModel.save_model(deepcopy(model), acc, epoch, config['save_path'], supplementary)
                 print("model saved!")
@@ -172,7 +171,8 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 def extract(model_watermarked, supp):
     model_watermarked.eval()
     extractor = create_feature_extractor(model_watermarked, [supp["layer_name"]])
-    x_key, _ = next(iter(supp["x_key"]))
+    # x_key, _ = next(iter(supp["x_key"]))
+    x_key = supp["x_key"]
     act = extractor(x_key.cuda())[supp["layer_name"]]
     act = act.view(act.shape[0], -1)
     act = act[:, supp["indices"]]

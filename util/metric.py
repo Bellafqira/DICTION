@@ -50,9 +50,10 @@ class Metric:
     def coupling_regularization(model1, model2, lambda_coupling=1):
         coupling_loss = 0.0
         for param1, param2 in zip(model1.parameters(), model2.parameters()):
-            coupling_loss += torch.norm(param1 - param2,
-                                        p=2)  # Utilisez la norme L2 pour calculer la distance entre les paramètres
-        coupling_loss *= lambda_coupling  # Facteur de pondération pour contrôler l'importance de la régularisation
+            coupling_loss += torch.norm(param1 - param2, p=2)
+            # Use L2 norm to calculate distance between parameters
+
+        coupling_loss *= lambda_coupling   # Weighting factor to control the importance of regularization
 
         return coupling_loss
 

@@ -125,7 +125,12 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 
     # Generate the watermark
     watermark = 1. * torch.randint(0, 2, size=(config["nb_wat_classes"], config["watermark_size"]))
+
+    # # Generate a random watermark
+    # watermark = Random.get_rand_bits(config["watermark_size"], 1., 0.)
+    # watermark = torch.tensor(watermark_rd).reshape(1, config["watermark_size"])
     # print("watermark", watermark)
+
     # generate matrix matrix_a
     matrix_a = Random.generate_secret_matrix(config["n_features"], config["watermark_size"])
 
@@ -133,6 +138,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
     model = deepcopy(init_model)
     nodes, _ = get_graph_node_names(init_model)
     # print(nodes)
+
     # extract the features of the given layer
     extractor = create_feature_extractor(model, [config["layer_name"]])
     criterion = config["criterion"]
@@ -149,7 +155,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
         {'params': model_deepSigns.parameters(), 'lr': 1e-1, 'weight_decay': 1e-2}
     ], lr=config["lr"])
 
-    acc = TrainModel.evaluate(model, test_loader, config)
+    # acc = TrainModel.evaluate(model, test_loader, config)
     # ber_ design the ber computed by the statistical means
     ber_ = 1
 
@@ -168,7 +174,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
         # AddGaussianNoise(config["mean"], config["std"]),
     ])
     dataset_key = CustomTensorDataset(x_key, y_key, transform_list=transform_train)
-    key_loader = DataLoader(dataset=dataset_key, batch_size=len(x_key), shuffle=True)
+    key_loader = DataLoader(dataset=dataset_key, batch_size=len(x_key), shuffle=False)
 
     for epoch in range(config["epochs"]):
         train_loss = correct = total = 0

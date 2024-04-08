@@ -96,8 +96,8 @@ class RigaExt(nn.Module):
 class LinearMod(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.fc1 = nn.Linear(config["n_features"], 128)
-        self.fc2 = nn.Linear(128, config["watermark_size"])
+        self.fc1 = nn.Linear(config["n_features"], 512)
+        self.fc2 = nn.Linear(512, config["watermark_size"])
         self.fc3 = nn.Linear(config["watermark_size"], config["watermark_size"])
 
         self.sig = nn.Sigmoid()
@@ -109,6 +109,6 @@ class LinearMod(nn.Module):
         out = self.sig(out)
         out = self.fc2(out)
         out = self.sig(out)
-        # out = self.fc3(out)
-        # out = self.sig(out)
+        out = self.fc3(out)
+        out = self.sig(out)
         return out

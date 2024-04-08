@@ -297,8 +297,8 @@ cf_cnn_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 # ************* watermarking Resnet18 architecture ****************
 watermark_size = 256
 epochs_embed = 1000
-epoch_check = 30
-layer_name = "layer3.1.conv1"
+epoch_check = 50
+layer_name = "view"
 # layer1.0.conv1', layer3.1.conv1, view
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
@@ -311,16 +311,18 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      # Latent space parameters
                      "mean": 0,
                      "std": 1,
+
                      "square_size": 5,
                      "start_x": 0,
                      "start_y": 0,
                      "square_value": 1,
+
                      "batch_size": int(cf_resnet18_dict["batch_size"] * 0.5),
-                     "n_features": 0.01,
+                     "n_features": .5,
                      "lambda": 1e-0,
                      "layer_name": layer_name,
 
-                     "lr": 1e-4,
+                     "lr": 1e-3,
                      "wd": 0,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
@@ -330,7 +332,7 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      # relu but change in mlp cd
                      "path_model": cf_resnet18_dict["save_path"],
                      "momentum": 0,
-                     "milestones": [50, 150],
+                     "milestones": [30, 150],
                      "gamma": .1,
                      "criterion": cf_resnet18_dict["criterion"],
                      "device": cf_resnet18_dict["device"]
@@ -446,7 +448,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "epoch_check": epoch_check,
 
                      # Latent space parameters
-                     "batch_size": int(cf_mlp_riga_dict["batch_size"]*0.5),
+                     "batch_size": int(cf_mlp_riga_dict["batch_size"]*1.),
                      "mean": 0,
                      "std": 1,
                      # the size of the square to be added to the trigger set and its position
@@ -455,12 +457,12 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "start_y": 0,
                      "square_value": 1,
 
-                     "n_features": 0.9, # the percentage of features to be used in the watermarking process
+                     "n_features": 0.5,  # the percentage of features to be used in the watermarking process
                      "layer_name": layer_name,
 
-                     "lambda": 1, # the regularization parameter to train the projection model
+                     "lambda": 1,  # the regularization parameter to train the projection model
 
-                     "lr": 1e-4,
+                     "lr": 1e-3,
                      "wd": 0,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
@@ -517,7 +519,7 @@ cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
                          }
 
 epoch_attack = 40
-watermark_size = 256
+watermark_size = 512
 epoch_check = 30
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) \
                    + "_epc" + str(epoch_check)
@@ -528,23 +530,24 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_embed,
                          "watermark_size": watermark_size,
 
                          # Latent space parameters
-                         "mean": 0,
+                         "mean": 1,
                          "std": 1,
+
                          "square_size": 5,
-                         "start_x": 0,
-                         "start_y": 0,
-                         "square_value": 1,
+                         "start_x": 10,
+                         "start_y": 10,
+                         "square_value": 0.5,
+
                          "n_features": 0.5,
                          "batch_size": int(cf_mlp_riga_dict["batch_size"]*0.5),
 
                          "epochs": epoch_attack,
                          "epoch_check": epoch_check,
 
-                         # Latent space parameters
+
                          "lambda": 1,
                          "layer_name": layer_name,
                          "lr": 1e-3,
-
                          "wd": 0,
                          "scheduler": "MultiStepLR",
                          "architecture": cf_mlp_riga_dict["criterion"],

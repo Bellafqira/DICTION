@@ -286,7 +286,7 @@ class Tests:
         model_wat.eval()
 
         # get trigger set
-        x_key, _ = next(iter(model_dict["supplementary"]["x_key"]))
+        # x_key, _ = next(iter(model_dict["supplementary"]["x_key"]))
 
         # evaluate the original model
         print("evaluate the watermarked model")
