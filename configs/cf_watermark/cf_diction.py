@@ -60,7 +60,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,  # the configuration of the target
 
                 }
 
-epoch_attack = 25
+epoch_attack = 50
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + ".pth"
 
 cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
