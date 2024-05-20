@@ -35,7 +35,7 @@ class Metric:
     @staticmethod
     def mse(a, b):
         """Quadratic error"""
-        return torch.nn.MSELoss(reduction='mean')(a, b)
+        return torch.nn.MSELoss(reduction='sum')(a, b)
 
     @staticmethod
     def binary_acc(y_pred, y_test):
@@ -47,10 +47,10 @@ class Metric:
         return acc
 
     @staticmethod
-    def coupling_regularization(model1, model2, lambda_coupling=1):
+    def coupling_regularization(model1, model2, lambda_coupling=1, p=2):
         coupling_loss = 0.0
         for param1, param2 in zip(model1.parameters(), model2.parameters()):
-            coupling_loss += torch.norm(param1 - param2, p=2)
+            coupling_loss += torch.norm(param1 - param2, p=p)
             # Use L2 norm to calculate distance between parameters
 
         coupling_loss *= lambda_coupling   # Weighting factor to control the importance of regularization

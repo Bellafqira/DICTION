@@ -1,16 +1,21 @@
 #!/bin/bash
 
-source venv/bin/activate
+source .venv/bin/activate
 
-methods=("DICTION") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT")
-models=("RESNET18") # values: ("MLP", "CNN", "RESNET18", "MLP_RIGA)
-operations=("FINE_TUNING") #  values: ("WATERMARKING", "TRAIN", "FINE_TUNING", "OVERWRITING", "PRUNING", "SHOW", "PIA")
+methods=("UCHIDA") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT")
+models=("MLP_RIGA") # values: ("MLP" "CNN" "RESNET18" "MLP_RIGA")
+operations=("WATERMARKING" "PRUNING" "FINE_TUNING" "OVERWRITING" "SHOW") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA")
 
 for method in "${methods[@]}"; do
     for model in "${models[@]}"; do
         for operation in "${operations[@]}"; do
             echo -e "\nRunning $method with $model and $operation"
-            python test_case.py --method $method --model $model --operation $operation | tee out.txt
+            # Create the output directory if it does not exist
+            mkdir -p outs/"$operation"/"$method"
+            # Execute the python script and output the results to a file
+            python test_case.py --method "$method" --model "$model" --operation "$operation" | tee -a outs/"$operation"/"$method"/"$model".txt
         done
     done
 done
+
+echo "Operations completed."

@@ -4,7 +4,7 @@ from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
 from configs.cf_train.cf_resnet18 import cf_resnet18_dict
 
 # ************* watermarking MLP architecture ****************
-watermark_size = 256
+watermark_size = 128
 epochs_embed = 1000
 layer_name = "fc2"
 nb_wat_classes = 2
@@ -18,19 +18,19 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "epochs": epochs_embed,
                 "epoch_check": epoch_check,
 
-                "batch_size": int(60000 * 0.01),
-                "lambda_1": 0.1,
-                "lambda_2": 1,
+                "lambda_1": 1e-2,
+                "lambda_2": 1e-2,
 
-                "n_features": 512,
                 "n_components": 10,
                 "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                 "percent_ts": 0.01,
-                
+
+                "lr_DS": 1e-2,
+                "wd_DS": 1e-3,
 
                 "layer_name": layer_name,
-                "lr": 1e-4,
-                "wd": 0,
+                "lr": 1e-3,
+                "wd": 1e-4,
                 "opt": "Adam",
                 "scheduler": "MultiStepLR",
                 "architecture": cf_mlp_dict["architecture"],
@@ -49,9 +49,8 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 }
 
 
-
 epoch_attack = 50
-lr_attack = 1e-3
+lr_attack = 1e-4
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
                    + str(nb_wat_classes)
 
@@ -95,7 +94,7 @@ cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
 
 layer_name = "fc2"
 epoch_attack = 100
-watermark_size = 256
+watermark_size = 128
 nb_wat_classes = 2
 epoch_check = 10
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
@@ -106,19 +105,20 @@ cf_mlp_attack_ow = {"configuration": cf_mlp_dict,
                     "watermark_size": watermark_size,
                     "epochs": epoch_attack,
                     "epoch_check": epoch_check,
-                    "batch_size": int(60000 * 0.01),
-                    "lambda_1": 1,
-                    "lambda_2": 1,
-                    
 
-                    "n_features": 512,
+                    "lambda_1": 1e-2,
+                    "lambda_2": 1e-2,
+
                     "n_components": 10,
                     "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                     "percent_ts": 0.01,
 
+                    "lr_DS": 1e-1,
+                    "wd_DS": 1e-4,
+
                     "layer_name": layer_name,
-                    "lr": 1e-4,
-                    "wd": 0,
+                    "lr": 1e-3,
+                    "wd": 1e-4,
                     "opt": "Adam",
                     "scheduler": "MultiStepLR",
                     "architecture": cf_mlp_dict["architecture"],
@@ -144,11 +144,11 @@ cf_mlp_attack_ow = {"configuration": cf_mlp_dict,
 cf_mlp_attack_pia = {}
 
 # ************* watermarking CNN architecture ****************
-watermark_size = 64
+watermark_size = 128
 epochs_embed = 1000
 layer_name = "fc1"
-nb_wat_classes = 4
-epoch_check = 20
+nb_wat_classes = 2
+epoch_check = 30
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_nbw" \
                   + str(nb_wat_classes)
 cf_cnn_embed = {"configuration": cf_cnn_dict,
@@ -156,18 +156,19 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "watermark_size": watermark_size,
                 "epochs": epochs_embed,
                 "epoch_check": epoch_check,
-                "batch_size": int(50000 * 0.01),
 
-                "lambda_1": 1,
-                "lambda_2": 1,
-                "n_features": 512,
+                "lambda_1": 1e-2,
+                "lambda_2": 1e-2,
                 "n_components": 10,
                 "nb_wat_classes": nb_wat_classes,  # number of classes to watermark
                 "percent_ts": 0.01,
                 "layer_name": layer_name,
 
-                "lr": 1e-4,
-                "wd": 0,
+                "lr_DS": 1e-2,
+                "wd_DS": 1e-3,
+
+                "lr": 1e-3,
+                "wd": 1e-4,
                 "opt": "Adam",
                 "scheduler": "MultiStepLR",
                 "architecture": cf_cnn_dict['architecture'],
@@ -194,18 +195,17 @@ cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "path_model": cf_cnn_embed['save_path'],
                     "epochs": epoch_attack,
                     "watermark_size": watermark_size,
-                    "batch_size": cf_cnn_dict["batch_size"],
                     "layer_name": layer_name,
 
                     "lr": 1e-4,
-                    "wd": 0,
+                    "wd": 1e-5,
 
                     "scheduler": "MultiStepLR",
                     "opt": "Adam",
                     "architecture": cf_cnn_dict["architecture"],
                     "save_path": "results/attacks/finetuning/deepsigns/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
-                    "momentum": 0.9,
+                    "momentum": 0,
                     "milestones": [150, 200],
                     "gamma": 0.1,
                     "criterion": cf_cnn_dict["criterion"],
@@ -221,7 +221,6 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed["save_path"],
                     "watermark_size": watermark_size,
-                    "amount": 0.1,
                     "architecture": cf_cnn_dict['architecture'],
                     "save_path": "results/attacks/pruning/deepsigns/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
@@ -232,7 +231,7 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
 
 layer_name = "fc1"
 epoch_attack = 100
-watermark_size = 256
+watermark_size = 128
 nb_wat_classes = 2
 epoch_check = 20
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
@@ -242,18 +241,19 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "watermark_size": watermark_size,
                     "epochs": epochs_embed,
                     "epoch_check": epoch_check,
-                    "batch_size": int(50000 * 0.01),
                     "lambda_1": 0.1,
                     "lambda_2": 0.1,
 
-                    "n_features": 512,
                     "n_components": 10,
                     "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                     "percent_ts": 0.01,
 
+                    "lr_DS": 1e-2,
+                    "wd_DS": 1e-3,
+
                     "layer_name": layer_name,
-                    "lr": 1e-4,
-                    "wd": 0,
+                    "lr": 1e-3,
+                    "wd": 1e-4,
                     "opt": "Adam",
                     "scheduler": "MultiStepLR",
                     "architecture": cf_cnn_dict["architecture"],
@@ -278,7 +278,7 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
 
 cf_cnn_attack_pia = {}
 # ************* watermarking Resnet18 architecture ****************
-watermark_size = 256
+watermark_size = 128
 epochs_embed = 1000
 layer_name = "view"
 nb_wat_classes = 2
@@ -291,14 +291,18 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "watermark_size": watermark_size,
                      "epochs": epochs_embed,
                     "epoch_check": epoch_check,
-                     "batch_size": int(50000 * 0.01),
 
-                     "lambda_1": 1,
-                     "lambda_2": 1,
-                     "n_features": 512,
+                     "lambda_1": 1e-2,
+                     "lambda_2": 1e-2,
+
+
                      "n_components": 10,
                      "nb_wat_classes": nb_wat_classes,  # number of classes to watermark
                      "percent_ts": 0.01,
+
+                     "lr_DS": 1e-2,
+                     "wd_DS": 1e-3,
+
                      "layer_name": layer_name,
                      "lr": 1e-4,
                      "wd": 0,
@@ -329,7 +333,6 @@ cf_resnet18_attack_ft = {"configuration": cf_resnet18_dict,
                          "path_model": cf_resnet18_embed['save_path'],
                          "epochs": epoch_attack,
                          "watermark_size": watermark_size,
-                         "batch_size": 512,
 
                          "layer_name": layer_name,
                          "lr": 1e-4,
@@ -363,9 +366,9 @@ cf_resnet18_attack_pr = {"configuration": cf_resnet18_dict,
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
 
                          }
-watermark_size = 256
+watermark_size = 128
 layer_name = "view"
-nb_wat_classes = 4
+nb_wat_classes = 2
 epoch_attack = 100
 epoch_check = 20
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
@@ -375,19 +378,21 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
                          "path_model": cf_resnet18_embed["save_path"],
                          "watermark_size": watermark_size,
-                         "batch_size": int(50000 * 0.01),
                          "lambda_1": 0.1,
                          "lambda_2": 0.1,
 
-                         "n_features": 512,
                          "n_components": 10,
                          "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                          "percent_ts": 0.01,
                          "epochs": epoch_attack,
                          "epoch_check": epoch_check,
+
+                         "lr_DS": 1e-2,
+                         "wd_DS": 1e-3,
+
                          "layer_name": layer_name,
                          "lr": 1e-4,
-                         "wd": 0,
+                         "wd": 1e-5,
                          "opt": "Adam",
                          "scheduler": "MultiStepLR",
                          "architecture": cf_resnet18_dict["architecture"],
@@ -414,7 +419,7 @@ cf_resnet18_attack_pia = {}
 watermark_size = 64
 epochs_embed = 10000
 layer_name = "fc2"
-nb_wat_classes = 2
+nb_wat_classes = 4
 epoch_check = 30
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_nbw" \
                   + str(nb_wat_classes) + "_epc" + str(epoch_check)
@@ -425,18 +430,19 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "epochs": epochs_embed,
                      "epoch_check": epoch_check,
 
-                     "batch_size": int(60000 * 0.01),
-                     "lambda_1": 1,
-                     "lambda_2": 1,
+                     "lambda_1": 1e-2,
+                     "lambda_2": 1e-2,
 
-                     "n_features": 64,
                      "n_components": 10,
                      "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                      "percent_ts": 0.01,
 
+                     "lr_DS": 1e-2,
+                     "wd_DS": 1e-3,
+
                      "layer_name": layer_name,
                      "lr": 1e-3,
-                     "wd": 0,
+                     "wd": 1e-4,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
                      "architecture": cf_mlp_riga_dict["architecture"],
@@ -466,7 +472,7 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
                          "watermark_size": watermark_size,
                          "epochs": epoch_attack,
                          "lr": lr_attack,
-                         "wd": cf_mlp_riga_dict["wd"],
+                         "wd": 1e-5,
                          "opt": "Adam",
                          "scheduler": "MultiStepLR",
                          "architecture": cf_mlp_riga_dict["architecture"],
@@ -489,7 +495,6 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
 cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
                          "path_model": cf_mlp_riga_embed["save_path"],
                          "watermark_size": watermark_size,
-                         "amount": 0.7,
                          "criterion": cf_mlp_riga_dict["criterion"],
                          "device": cf_mlp_riga_dict["device"],
                          "architecture": cf_mlp_dict["architecture"],
@@ -499,8 +504,8 @@ cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
 
 layer_name = "fc2"
 epoch_attack = 100
-watermark_size = 256
-nb_wat_classes = 2
+watermark_size = 64
+nb_wat_classes = 4
 epoch_check = 30
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_nbw" \
                    + str(nb_wat_classes)
@@ -509,19 +514,21 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_dict,
                          "database": cf_mlp_riga_dict["database"],
                          "watermark_size": watermark_size,
                          "epochs": epoch_attack,
-                                              "epoch_check": epoch_check,
-                         "batch_size": int(60000 * 0.01),
-                         "lambda_1": 1,
-                         "lambda_2": 1,
+                         "epoch_check": epoch_check,
 
-                         "n_features": 64,
+                         "lambda_1": 1e-2,
+                         "lambda_2": 1e-2,
+
                          "n_components": 10,
                          "nb_wat_classes": nb_wat_classes,  # number of classes to watermark "s" in DeepSigns paper
                          "percent_ts": 0.01,
 
+                         "lr_DS": 1e-2,
+                         "wd_DS": 1e-3,
+
                          "layer_name": layer_name,
-                         "lr": 1e-4,
-                         "wd": 0,
+                         "lr": 1e-3,
+                         "wd": 1e-4,
                          "opt": "Adam",
                          "scheduler": "MultiStepLR",
                          "architecture": cf_mlp_riga_dict["architecture"],

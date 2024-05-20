@@ -24,10 +24,22 @@ class Util:
         return torch.nn.Threshold(0.5, 0)(matrix_g)
 
     @staticmethod
-    def stack_x_fc(extractor, x_key, config):
+    def stack_act(extractor, x_key, config):
         x_fc = torch.cat([extractor(data.to(config["device"]))[config["layer_name"]].detach().cpu() for data, _ in
                           x_key], dim=0)
         return x_fc.cuda()
+
+    @staticmethod
+    def _get_act(dict_of_tensors):
+        first_key = next(iter(dict_of_tensors))
+        concatenated_tensor_dict = dict_of_tensors[first_key]
+        concatenated_tensor_dict = concatenated_tensor_dict.view(concatenated_tensor_dict.shape[0], -1)
+        # Loop through the dictionary starting from the second element and concatenate each tensor
+        for key in list(dict_of_tensors)[1:]:
+            tmp = dict_of_tensors[key].view(dict_of_tensors[key].shape[0], -1)
+            concatenated_tensor_dict = torch.cat((concatenated_tensor_dict, tmp), dim=1)
+
+        return concatenated_tensor_dict
 
 
 class Random:
@@ -215,10 +227,11 @@ class TrainModel:
         return best_model, best_acc, acc
 
     @staticmethod
-    def evaluate(model, test_loader, config):
+    def evaluate(init_model, test_loader, config):
         test_loss = correct = total = 0
         loop = tqdm(test_loader, leave=True)
-        model.eval()
+        model = deepcopy(init_model)
+        # model.eval()
         criterion = config["criterion"]
         device = config["device"]
 
@@ -272,7 +285,7 @@ class TrainModel:
     @staticmethod
     def get_model(architecture, device):
         if architecture == "CNN":
-            # ep50, bs =512, lr=0.001, m=0.9, Adam
+            # ep50, bs =512, lr=0.001, Adam
             model = CnnModel().to(device)
         elif architecture == "MLP":
             # ep50, bs =512, lr=0.01, opt=Adam

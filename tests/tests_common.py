@@ -66,7 +66,7 @@ class Tests:
         # Get model
         init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
         init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
-        init_model.eval()
+        # init_model.eval()
         # load the watermarked model
         dict_model = TrainModel.load_model(config_embed['save_path'])
         model_wat = dict_model["supplementary"]["model"]
@@ -79,7 +79,8 @@ class Tests:
         print("Start fine-tuning")
         results_acc = []
         results_ber = []
-        epochs = [50, 100, 150]
+        epochs = [config_attack["epochs"]*i for i in range(1, 4)]
+        # epochs = [50, 100, 150]
         for ep in epochs:
             model_wat = TrainModel.fine_tune(model_wat, train_loader, test_loader, config_attack)
             # check the accuracy and BER
@@ -152,23 +153,127 @@ class Tests:
         print(f"BER_5 (watermarked model with overwrite projection model): {ber_5}")
         print(f"BER_6 (watermarked model with watermark projection model): {ber_6}")
 
-        # b_ext_1 = tensor_vector_to_image(b_ext_1) # model_over + \theta prime
-        # b_ext_2 = tensor_vector_to_image(b_ext_2) # model_over + \theta
-        # b_ext_3 = tensor_vector_to_image(b_ext_3) # model_orig + \theta prime
-        # b_ext_4 = tensor_vector_to_image(b_ext_4) # model_orig + \theta
-        # b_ext_5 = tensor_vector_to_image(b_ext_5) # model_wat + \theta prime
-        # b_ext_6 = tensor_vector_to_image(b_ext_6) # model_wat + \theta
-        # print(f"list of bers", ber_1, ber_2, ber_3, ber_4, ber_5, ber_6)
-
-
-        # images = [b_ext_1, b_ext_2, b_ext_3, b_ext_4, b_ext_5, b_ext_6]
-        # display_images(images)
-        # print("watermark 1,", b_ext_1)
-        # print("watermark 2,", b_ext_2)
-        # print("watermark 3,", b_ext_3)
-        # print("watermark 4,", b_ext_4)
-
         return acc, ber
+
+    def show_weights_distribution(self, config_embed, config_data):
+        # Get data
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
+        # Get model
+        model_init = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
+        model_init.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
+        # model_init.eval()
+
+        # Layer to inspect
+        if isinstance(config_embed["layer_name"], list):
+            layer_name = config_embed["layer_name"][-1]
+        else:
+            layer_name = config_embed["layer_name"].replace(".weight", "")
+
+        # evaluate the original model
+        print("evaluate the original model")
+        TrainModel.evaluate(model_init, test_loader, config_embed)
+
+        # load the watermarked model
+        model_dict = TrainModel.load_model(config_embed['save_path'])
+        model_wat = model_dict["supplementary"]["model"]
+
+        # get trigger set
+        # x_key, _ = next(iter(model_dict["supplementary"]["x_key"]))
+
+        # evaluate the original model
+        print("evaluate the watermarked model")
+        print("layer_name", layer_name)
+        if layer_name == "linear":  # in the case of resnet18
+            layer_name = "view"
+        TrainModel.evaluate(model_wat, test_loader, config_embed)
+        extractor_init = create_feature_extractor(model_init, [layer_name])
+        extractor_wat = create_feature_extractor(model_wat, [layer_name])
+
+        x_train, _ = next(iter(train_loader))  # x
+        # x_train = x_key
+
+        # Get activation distributions
+        act_init = extractor_init(x_train.cuda())[layer_name]
+        act_wat = extractor_wat(x_train.cuda())[layer_name]
+        # Compute the mean of activation maps across the batch dimension
+        act_init = torch.mean(act_init, dim=0)
+        act_wat = torch.mean(act_wat, dim=0)
+
+        # Flatten the activation maps to simplify histogram computation
+        act_init_flat = torch.flatten(act_init.data).cpu().numpy()
+        act_wat_flat = torch.flatten(act_wat.data).cpu().numpy()
+
+        # Compute the min and max for dynamic binning
+        min_act = min(act_init_flat.min(), act_wat_flat.min())
+        max_act = max(act_init_flat.max(), act_wat_flat.max())
+
+        # Generate bins dynamically from min to max with steps
+        bin_size = 1  # adjust bin size as needed
+        bins = np.arange(min_act, max_act + bin_size, bin_size)
+
+        # Compute activation distribution stats
+        act_init_mean, act_init_std = act_init_flat.mean(), act_init_flat.std()
+        act_wat_mean, act_wat_std = act_wat_flat.mean(), act_wat_flat.std()
+
+        # Plot distributions
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 11.25))
+
+        # Init activations hist
+        ax1.hist(act_init_flat, bins=bins, align='mid', edgecolor='red')
+        ax1.set(xlabel='Bins', ylabel='Frequency', title='non watermarked activation maps')
+        ax1.text(0.5, 0.9, f"mean : {act_init_mean:.2f} \nstd : {act_init_std:.2f}",
+                 horizontalalignment='left',
+                 verticalalignment='center',
+                 transform=ax1.transAxes)
+
+        # Watermarked activations hist
+        ax2.hist(act_wat_flat, bins=bins, align='mid', edgecolor='red')
+        ax2.set(xlabel='Bins', title='watermarked activation maps')
+        ax2.text(0.5, 0.9, f"mean : {act_wat_mean:.2f} \nstd : {act_wat_std:.2f}",
+                 horizontalalignment='left',
+                 verticalalignment='center',
+                 transform=ax2.transAxes)
+
+# Plot model parameter distributions
+        for (name_init, param_init), (name, param) in zip(model_init.named_parameters(), model_wat.named_parameters()):
+            if name == layer_name + '.weight' or name == "linear.weight":  # only for ResNet18
+                # Flatten the weight tensors for histogram plotting
+                weights_init = torch.flatten(param_init.data).cpu().numpy()
+                weights_wat = torch.flatten(param.data).cpu().numpy()
+
+                # Calculate statistics
+                weights_init_mean, weights_init_std = weights_init.mean(), weights_init.std()
+                weights_wat_mean, weights_wat_std = weights_wat.mean(), weights_wat.std()
+
+                # Update global min and max for init and wat models
+                min_weights = min(weights_init.min(), weights_wat.min())
+                max_weights = max(weights_init.max(), weights_wat.max())
+
+                # Compute bins based on overall min and max
+                bins = list(np.arange(min_weights, max_weights, 0.1))
+
+                # Histogram for non-watermarked weights
+                ax3.hist(weights_init, bins=bins, align='mid', edgecolor='red')
+                ax3.set(xlabel='Bins', ylabel='Frequency', title='Non-watermarked weights of ' + name  )
+                ax3.text(0.5, 0.9, f"Mean: {weights_init_mean:.2f}\nStd: {weights_init_std:.2f}",
+                         horizontalalignment='left',
+                         verticalalignment='center',
+                         transform=ax3.transAxes)
+
+                # Watermarked
+                ax4.hist(weights_wat, bins=bins, align='mid', edgecolor='red')
+                ax4.set(xlabel='Bins', ylabel='Frequency', title='Watermarked weights')
+                ax4.text(0.5, 0.9, f"Mean: {weights_wat_mean:.2f}\nStd: {weights_wat_std:.2f}",
+                         horizontalalignment='left',
+                         verticalalignment='center',
+                         transform=ax4.transAxes)
+                break
+
+        savedir = os.path.join("results/weights", self.model)
+        if not (os.path.exists(savedir)):
+            os.makedirs(savedir)
+        plt.savefig(os.path.join(savedir, f"{self.method}_{self.model}.png"))
+        plt.show()
 
     @staticmethod
     def pia_attack(config_data, config_embed, config_attack):
@@ -265,87 +370,6 @@ class Tests:
                 loop.set_description(f"Epoch [{epoch}/{epochs}]")
                 loop.set_postfix(loss=train_loss / (batch_idx + 1), acc=f"{epoch_acc / (batch_idx + 1):.3f}")
 
-    def show_weights_distribution(self, config_embed, config_data):
-        # Get data
-        train_loader, test_loader = Database.load_dataset_loaders(config_data)
-        # Get model
-        model_init = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
-        model_init.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
-        model_init.eval()
-
-        # Layer to inspect
-        layer_name = config_embed['layer_name'].replace(".weight", "")
-
-        # evaluate the original model
-        print("evaluate the original model")
-        TrainModel.evaluate(model_init, test_loader, config_embed)
-
-        # load the watermarked model
-        model_dict = TrainModel.load_model(config_embed['save_path'])
-        model_wat = model_dict["supplementary"]["model"]
-        model_wat.eval()
-
-        # get trigger set
-        # x_key, _ = next(iter(model_dict["supplementary"]["x_key"]))
-
-        # evaluate the original model
-        print("evaluate the watermarked model")
-        TrainModel.evaluate(model_wat, test_loader, config_embed)
-        extractor_init = create_feature_extractor(model_init, [layer_name])
-        extractor_wat = create_feature_extractor(model_wat, [layer_name])
-
-        x_train, _ = next(iter(train_loader)) # x
-        # x_train = x_key
-
-        # Get activation distributions
-        act_init = extractor_init(x_train.cuda())[layer_name]
-        act_wat = extractor_wat(x_train.cuda())[layer_name]
-        act_init = torch.mean(act_init, dim=0)
-        act_wat = torch.mean(act_wat, dim=0)
-
-        # Compute activation distribution stats
-        act_init_mean, act_init_std = torch.mean(act_init).item(), torch.std(act_init).item()
-        act_wat_mean, act_wat_std = torch.mean(act_wat).item(), torch.std(act_wat).item()
-
-        # Plot distributions
-        bins = list(np.arange(-2, 4, 0.2))
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 11.25))
-
-        # Init activations hist
-        ax1.hist(torch.flatten(act_init.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
-        ax1.set(xlabel='Bins', ylabel='Frequency', title='non watermarked activation maps')
-        ax1.text(0.5, 0.9, f"mean : {act_init_mean:.2f} \nstd : {act_init_std:.2f}",
-                 horizontalalignment='left',
-                 verticalalignment='center',
-                 transform=ax1.transAxes)
-
-        # Watermarked activations hist
-        ax2.hist(torch.flatten(act_wat.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
-        ax2.set(xlabel='Bins', title='watermarked activation maps')
-        ax2.text(0.5, 0.9, f"mean : {act_wat_mean:.2f} \nstd : {act_wat_std:.2f}",
-                 horizontalalignment='left',
-                 verticalalignment='center',
-                 transform=ax2.transAxes)
-
-
-        # Plot model parameter distributions
-        bins = list(np.arange(-1, 2, 0.1))
-        for (name_init, param_init), (name, param) in zip(model_init.named_parameters(), model_wat.named_parameters()):
-            # print(name_init)
-            if name == layer_name + '.weight' or name == "layer4.1.conv2.weight":
-                # Initial
-                ax3.hist(torch.flatten(param_init.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
-                ax3.set(xlabel='Bins', title='non watermarked weights')
-                # Watermarked
-                ax4.hist(torch.flatten(param.data).cpu().numpy(), bins=bins, align='mid', edgecolor='red')
-                ax4.set(xlabel='Bins', title='watermarked weights')
-
-        savedir = os.path.join("results/weights", self.model)
-        if not (os.path.exists(savedir)):
-            os.makedirs(savedir)
-        plt.savefig(os.path.join(savedir, f"{self.method}_{self.model}.png"))
-        plt.show()
-
     @staticmethod
     def gen_database(config_data):
         """ generate a new database"""
@@ -382,34 +406,3 @@ class Tests:
         plt.title(f"ACC of {config_train['architecture']} over database = {config_train['database']}")
         plt.savefig(config_train['save_fig_path'])
         plt.show()
-
-    @staticmethod
-    def gmm(config_embed, config_data):
-        # #####  computing the gmm #####
-        # Get model
-        init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
-        init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
-        # Get data
-        train_loader, test_loader = Database.load_dataset_loaders(config_data)
-        # evaluate the model
-        print("Evaluation of the model to watermark")
-        TrainModel.evaluate(init_model, test_loader, config_embed)
-        # here we save the activation maps of all data in  the tensor act
-        # we fit then the GMM to this tensor
-        # define extractor
-        extractor = create_feature_extractor(init_model, [config_embed["layer_name"]])
-        act = Util.stack_x_fc(extractor, train_loader, config_embed)
-        print("act", act.shape)
-        # """compute and save the gmm"""
-        print("start gmm")
-        start = time.time()
-        gmm_compute(act=act, n_features=config_embed["n_features"], n_components=config_embed["n_components"],
-                    path=config_embed["path_gmm"])
-        print("GMM computed in  ", time.time() - start, "second")
-        print("start loading the GMM")
-        gmm, x_fc1, gmm_hist, gmm_nonzero = gmm_load(config_embed["n_features"], config_embed["n_components"],
-                                                     path=config_embed["path_gmm"])
-        print("show histogram of GMM classes")
-        print(gmm_hist)
-        print("show non zero classes")
-        print(gmm_nonzero)
