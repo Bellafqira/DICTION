@@ -14,8 +14,6 @@ from attacks.pruning import pruning
 from networks.piadetector import PiaDetector
 from util.metric import Metric
 from util.util import TrainModel, Database, Util, CustomTensorDataset
-from watermark.deepsigns import gmm_compute, gmm_load
-
 
 class Tests:
     def __init__(self, method: str, model: str):
@@ -23,11 +21,11 @@ class Tests:
         self.method = method
         match method:
             case "DICTION":
-                from watermark.diction import extract, embed
+                from watermark.diction_alt import extract, embed
                 self.extract = extract
                 self.embed = embed
             case "DEEPSIGNS":
-                from watermark.deepsigns import extract, embed
+                from watermark.deepsigns_alt import extract, embed
                 self.extract = extract
                 self.embed = embed
             case "UCHIDA":
@@ -153,6 +151,22 @@ class Tests:
         print(f"BER_5 (watermarked model with overwrite projection model): {ber_5}")
         print(f"BER_6 (watermarked model with watermark projection model): {ber_6}")
 
+        # b_ext_1 = tensor_vector_to_image(b_ext_1) # model_over + \theta prime
+        # b_ext_2 = tensor_vector_to_image(b_ext_2) # model_over + \theta
+        # b_ext_3 = tensor_vector_to_image(b_ext_3) # model_orig + \theta prime
+        # b_ext_4 = tensor_vector_to_image(b_ext_4) # model_orig + \theta
+        # b_ext_5 = tensor_vector_to_image(b_ext_5) # model_wat + \theta prime
+        # b_ext_6 = tensor_vector_to_image(b_ext_6) # model_wat + \theta
+        # print(f"list of bers", ber_1, ber_2, ber_3, ber_4, ber_5, ber_6)
+
+
+        # images = [b_ext_1, b_ext_2, b_ext_3, b_ext_4, b_ext_5, b_ext_6]
+        # display_images(images)
+        # print("watermark 1,", b_ext_1)
+        # print("watermark 2,", b_ext_2)
+        # print("watermark 3,", b_ext_3)
+        # print("watermark 4,", b_ext_4)
+
         return acc, ber
 
     def show_weights_distribution(self, config_embed, config_data):
@@ -161,7 +175,6 @@ class Tests:
         # Get model
         model_init = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
         model_init.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
-        # model_init.eval()
 
         # Layer to inspect
         if isinstance(config_embed["layer_name"], list):
@@ -254,7 +267,7 @@ class Tests:
 
                 # Histogram for non-watermarked weights
                 ax3.hist(weights_init, bins=bins, align='mid', edgecolor='red')
-                ax3.set(xlabel='Bins', ylabel='Frequency', title='Non-watermarked weights of ' + name  )
+                ax3.set(xlabel='Bins', ylabel='Frequency', title='Non-watermarked weights')
                 ax3.text(0.5, 0.9, f"Mean: {weights_init_mean:.2f}\nStd: {weights_init_std:.2f}",
                          horizontalalignment='left',
                          verticalalignment='center',
