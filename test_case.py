@@ -72,7 +72,7 @@ if __name__ == '__main__':
         t_start_gen_db = datetime.datetime.now()
         Tests.gen_database(config_data)
         runtime_gen_db = datetime.datetime.now() - t_start_gen_db
-        print(f"runtime_wm to generate the database : {config_data["database"]} : {runtime_gen_db} ")
+        print(f"runtime_wm to generate the database : {config_data['database']} : {runtime_gen_db} ")
 
         print("### Start the model training ###")
         t_start_train = datetime.datetime.now()

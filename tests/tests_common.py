@@ -21,11 +21,11 @@ class Tests:
         self.method = method
         match method:
             case "DICTION":
-                from watermark.diction_alt import extract, embed
+                from watermark.diction import extract, embed
                 self.extract = extract
                 self.embed = embed
             case "DEEPSIGNS":
-                from watermark.deepsigns_alt import extract, embed
+                from watermark.deepsigns import extract, embed
                 self.extract = extract
                 self.embed = embed
             case "UCHIDA":
