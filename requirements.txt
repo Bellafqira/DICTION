@@ -1,8 +1,8 @@
-torch~=1.13.1
-numpy~=1.23.5
-scipy~=1.10.0
-matplotlib~=3.5.3
-torchvision~=0.14.1
-tqdm~=4.65.0
-Pillow~=10.3.0
-
+torch>=2.2.2
+numpy>=1.23.5
+scipy>=1.10.0
+matplotlib>=3.5.3
+torchvision>=0.17.2
+tqdm>=4.65.0
+pillow>=10.3.0
+setuptools
