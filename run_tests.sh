@@ -2,9 +2,9 @@
 
 source .venv/bin/activate
 
-methods=("DICTION") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT")
+methods=("UCHIDA") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT")
 models=("MLP") # values: ("MLP" "CNN" "RESNET18" "MLP_RIGA")
-operations=("SHOW") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA")
+operations=("WATERMARKING") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA")
 
 for method in "${methods[@]}"; do
     for model in "${models[@]}"; do
