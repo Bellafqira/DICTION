@@ -14,7 +14,6 @@ from networks.mlp_riga import MLP_RIGA
 from networks.resnet import res_net18
 from torch.utils.data import Dataset
 
-
 devices = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -32,11 +31,28 @@ class Util:
     @staticmethod
     def _get_act(dict_of_tensors):
         first_key = next(iter(dict_of_tensors))
-        concatenated_tensor_dict = dict_of_tensors[first_key]
+
+        # Check if the first tensor has a shape of 4
+        if len(dict_of_tensors[first_key].shape) == 4:
+            concatenated_tensor_dict = dict_of_tensors[first_key].mean(dim=1)
+        else:
+            concatenated_tensor_dict = dict_of_tensors[first_key]
+
+        # Reshape the first tensor
         concatenated_tensor_dict = concatenated_tensor_dict.view(concatenated_tensor_dict.shape[0], -1)
-        # Loop through the dictionary starting from the second element and concatenate each tensor
+
+        # Loop through the dictionary starting from the second element
         for key in list(dict_of_tensors)[1:]:
-            tmp = dict_of_tensors[key].view(dict_of_tensors[key].shape[0], -1)
+            tmp = dict_of_tensors[key]
+
+            # If the tensor has a shape of 4, take the mean along the second dimension
+            if len(tmp.shape) == 4:
+                tmp = tmp.mean(dim=1)
+
+            # Reshape the tensor
+            tmp = tmp.view(tmp.shape[0], -1)
+
+            # Concatenate along the last dimension
             concatenated_tensor_dict = torch.cat((concatenated_tensor_dict, tmp), dim=1)
 
         return concatenated_tensor_dict
@@ -80,10 +96,10 @@ class Database:
         if database == "mnist":
             transform_train = transforms.Compose([
                 transforms.ToTensor(), torchvision.transforms.Normalize(
-                                 (0.1307,), (0.3081,))])
+                    (0.1307,), (0.3081,))])
             transform_test = transforms.Compose([
                 transforms.ToTensor(), torchvision.transforms.Normalize(
-                                 (0.1307,), (0.3081,))])
+                    (0.1307,), (0.3081,))])
         elif database == "cifar10":
             transform_train = transforms.Compose([
                 transforms.RandomCrop(size=32, padding=4),
@@ -262,7 +278,7 @@ class TrainModel:
             'supplementary': supplementary
         }
         savedir = os.path.dirname(path)
-        if not(os.path.exists(savedir)) :
+        if not (os.path.exists(savedir)):
             os.makedirs(savedir)
         torch.save(state, path)
 
@@ -345,7 +361,7 @@ class AddWhiteSquareTransform:
         white_square = torch.ones((C, self.square_size, self.square_size))
         if self.start_x + self.square_size <= H and self.start_y + self.square_size <= W:
             x[:, self.start_x:self.start_x + self.square_size,
-            self.start_y:self.start_y + self.square_size] = 1 # white_square
+            self.start_y:self.start_y + self.square_size] = 1  # white_square
         else:
             raise ValueError("Square position and size exceed image dimensions.")
         return x
@@ -353,7 +369,6 @@ class AddWhiteSquareTransform:
 
 class CustomTensorDataset(Dataset):
     def __init__(self, x_tensor, y_tensor, transform_list=None):
-
         self.x_tensor = x_tensor
         self.y_tensor = y_tensor
         self.transforms = transform_list
