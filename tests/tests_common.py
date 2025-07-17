@@ -1,19 +1,22 @@
-import time
-
 import torch
 from torch import nn, optim
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
-from torchvision.models.feature_extraction import get_graph_node_names, create_feature_extractor
+from torchvision.models.feature_extraction import create_feature_extractor
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
 from attacks.pruning import pruning
+from attacks.dummy_neurons import neuron_clique, neuron_split
+from attacks.distillation import train_student
 from networks.piadetector import PiaDetector
 from util.metric import Metric
 from util.util import TrainModel, Database, Util, CustomTensorDataset
+
+from dummy_neurons0 import neuron_clique, neuron_split
+
 
 class Tests:
     def __init__(self, method: str, model: str):
@@ -40,10 +43,15 @@ class Tests:
                 from watermark.riga import extract, embed
                 self.extract = extract
                 self.embed = embed
+            case "HUFUNET":
+                # from watermark.hufunet import extract, embed
+                # self.extract = extract
+                # self.embed = embed
+                pass
             case _:
                 raise ValueError(f"method {method} not implemented")
 
-    def embedding(self, config_embed, config_data, nb_run=0):
+    def embedding(self, config_embed, config_data):
         # Get the original model
         init_model = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
         init_model.load_state_dict(TrainModel.load_model(config_embed["path_model"])['net'])
@@ -287,6 +295,87 @@ class Tests:
             os.makedirs(savedir)
         plt.savefig(os.path.join(savedir, f"{self.method}_{self.model}.png"))
         plt.show()
+
+    def dummy_neurons_attack(self, config_embed, config_attack, config_data):
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
+
+        dict_model = TrainModel.load_model(config_attack['path_model'])
+        model_wat = dict_model["supplementary"]["model"]
+
+        print("Check the accuracy of the watermarked model")
+        TrainModel.evaluate(model_wat, test_loader, config_embed)
+
+        print("Compute the BER from the original model (non watermarked)")
+        _, ber = self.extract(model_wat, dict_model["supplementary"])
+
+        print("Original teacher model:")
+        linear_layer_indices = []
+
+        for i, layer in enumerate(model_wat.modules()):
+            if isinstance(layer, nn.Linear):
+                print(f"{i}. Linear layer: {layer.in_features} -> {layer.out_features}")
+                linear_layer_indices.append(i)
+
+        print(f"Positions of nn.Linear layers: {linear_layer_indices}")
+
+        if config_attack["attack_type"] == "neuron_clique":
+            # # Test NeuronClique
+            print("Testing NeuronClique:")
+            print("-" * 30)
+            attacked_model = neuron_clique(model=model_wat.to(config_attack["device"]),
+                                         layer_name=config_attack["layer_name"], num_dummy=config_attack["num_dummy"])
+            #
+            for i, layer in enumerate(attacked_model.modules()):
+                if isinstance(layer, nn.Linear):
+                    print(f"{i}. Linear layer: {layer.in_features} -> {layer.out_features}")
+                    linear_layer_indices.append(i)
+        else:
+            # # Test NeuronClique
+            print("Testing NeuronSPLIT:")
+            print("-" * 30)
+            # new_model = neuron_split(model, layer_name="encoder.mlp.fc1", neuron_idx=3, num_splits=4)
+            attacked_model = neuron_split(model=model_wat.to(config_attack["device"]),
+                                          layer_name=config_attack["layer_name"], neuron_idx=config_attack["neuron_idx"]
+                                          , num_splits=config_attack["num_splits"])
+            #
+
+            for i, layer in enumerate(attacked_model.modules()):
+                if isinstance(layer, nn.Linear):
+                    print(f"{i}. Linear layer: {layer.in_features} -> {layer.out_features}")
+                    linear_layer_indices.append(i)
+
+        # I need to save the model
+        savedir = os.path.dirname(config_attack['save_path'])
+        if not (os.path.exists(savedir)):
+            os.makedirs(savedir)
+
+        torch.save(attacked_model, config_attack['save_path'])
+        print("Attacked model with " + config_attack["attack_type"] + " performance")
+        TrainModel.evaluate(attacked_model.to(config_attack["device"]), test_loader, config_embed)
+
+    def distillation(self, config_embed, config_attack, config_data):
+        # start by laoding the data
+        train_loader, test_loader = Database.load_dataset_loaders(config_data)
+        # I need to load the watermarked model for having the watermarking parameters
+        dict_model = TrainModel.load_model(config_embed['save_path'])
+        model_wat = dict_model["supplementary"]["model"]
+
+        print("Check the accuracy of the watermarked model")
+        TrainModel.evaluate(model_wat, test_loader, config_embed)
+
+        # I need to load the teacher model that just has been attacked with the dummy neurons and called the teacher
+        teacher = torch.load(config_attack['path_model']).to(config_embed["device"])
+
+        # I need to load the student model not watermarked and check if it s not watermarked
+
+        student = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
+
+        student = train_student(student, teacher, train_loader, temperature=2.0, lr=1e-3,
+                                epochs=config_attack["epoch_attack"], supp=dict_model["supplementary"], device="cuda",
+                      extract=self.extract, layer_name=config_attack["layer_name"])
+
+
+        torch.save(student, config_attack['save_path'])
 
     @staticmethod
     def pia_attack(config_data, config_embed, config_attack):

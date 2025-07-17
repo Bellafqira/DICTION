@@ -1,6 +1,7 @@
 from configs.cf_train.cf_cnn import cf_cnn_dict
 from configs.cf_train.cf_mlp import cf_mlp_dict
 from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
+from models.autoencoder import device
 
 # ************* watermarking MLP architecture ****************
 watermark_size = 256
@@ -10,6 +11,7 @@ epoch_check = 30
 save_path_embed = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + \
                   "_epc" + str(epoch_check)
 
+### Embedding
 cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "database": cf_mlp_dict["database"],
                 "watermark_size": watermark_size,
@@ -36,10 +38,10 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "device": cf_mlp_dict["device"],
                 }
 
+#### Fine tuning attack
 epoch_attack = 50
 lr_attack = 1e-4
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack)
-
 cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
                     "database": cf_mlp_dict["database"],
                     "path_model": cf_mlp_embed["save_path"],
@@ -66,6 +68,7 @@ cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
                     "show_acc_epoch": False
                     }
 
+### Pruning attack
 cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
                     "path_model": cf_mlp_embed["save_path"],
                     "watermark_size": watermark_size,
@@ -76,6 +79,7 @@ cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     }
 
+### Overwriting attack
 layer_name = "fc2.weight"
 epoch_attack = 100
 watermark_size = 256
@@ -112,7 +116,48 @@ cf_mlp_attack_ow = {"configuration": cf_mlp_dict,
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
+
+### PIA attack
 cf_mlp_attack_pia = {}
+
+### Dummy neurons attack
+layer_name="fc2"
+num_dummy=2
+attack_type="neuron_clique"
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
+
+cf_mlp_attack_dummy_neurons = {
+    "configuration": cf_mlp_dict,
+    "database": cf_mlp_dict["database"],
+    "path_model": cf_mlp_embed["save_path"],
+    "save_path": "results/attacks/dummy_neurons/uchida/" + cf_mlp_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":device,
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "num_dummy": 2, # if neuron_clique
+    "neuron_idx": 10, # if neuron_split
+    "num_splits": 2 # if neuron_split
+}
+
+### Dummy neurons attack
+layer_name="fc2"
+attack_type="logits"
+epoch_attack = 20
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
+
+cf_mlp_attack_distillation = {
+    "configuration": cf_mlp_dict,
+    "database": cf_mlp_dict["database"],
+    "path_model": cf_mlp_attack_dummy_neurons["save_path"],
+    "save_path": "results/attacks/distillation/uchida/" + cf_mlp_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":device,
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "epoch_attack": epoch_attack
+
+}
 
 # ************* watermarking CNN architecture ****************
 watermark_size = 256

@@ -22,14 +22,21 @@ method_configurations = {
     'UCHIDA': 'configs.cf_watermark.cf_uchida',
     'RES_ENCRYPT': 'configs.cf_watermark.cf_res_encrypt',
     'RIGA': 'configs.cf_watermark.cf_riga',
+    'HUFUNET': 'configs.cf_watermark.cf_hufunet',
 }
 
 # Model configurations
 model_configurations = {
-    'MLP': (cf_mlp_dict, cf_mnist_data, 'cf_mlp_embed', 'cf_mlp_attack_ft', 'cf_mlp_attack_pr', 'cf_mlp_attack_ow', 'cf_mlp_attack_pia'),
-    'CNN': (cf_cnn_dict, cf_cifar10_data, 'cf_cnn_embed', 'cf_cnn_attack_ft', 'cf_cnn_attack_pr', 'cf_cnn_attack_ow', 'cf_cnn_attack_pia'),
-    'RESNET18': (cf_resnet18_dict, cf_cifar10_data, 'cf_resnet18_embed', 'cf_resnet18_attack_ft', 'cf_resnet18_attack_pr', 'cf_resnet18_attack_ow', 'cf_resnet18_attack_pia'),
-    'MLP_RIGA': (cf_mlp_riga_dict, cf_mnist_data, 'cf_mlp_riga_embed', 'cf_mlp_riga_attack_ft', 'cf_mlp_riga_attack_pr', 'cf_mlp_riga_attack_ow', 'cf_mlp_riga_attack_pia'),
+    'MLP': (cf_mlp_dict, cf_mnist_data, 'cf_mlp_embed', 'cf_mlp_attack_ft', 'cf_mlp_attack_pr', 'cf_mlp_attack_ow',
+            'cf_mlp_attack_pia', 'cf_mlp_attack_dummy_neurons', 'cf_mlp_attack_distillation'),
+    'CNN': (cf_cnn_dict, cf_cifar10_data, 'cf_cnn_embed', 'cf_cnn_attack_ft', 'cf_cnn_attack_pr', 'cf_cnn_attack_ow',
+            'cf_cnn_attack_pia', 'cf_cnn_attack_dummy_neurons', 'cf_cnn_attack_distillation'),
+    'RESNET18': (cf_resnet18_dict, cf_cifar10_data, 'cf_resnet18_embed', 'cf_resnet18_attack_ft',
+                 'cf_resnet18_attack_pr', 'cf_resnet18_attack_ow', 'cf_resnet18_attack_pia',
+                 'cf_resnet18_attack_dummy_neurons', 'cf_resnet18_attack_distillation'),
+    'MLP_RIGA': (cf_mlp_riga_dict, cf_mnist_data, 'cf_mlp_riga_embed', 'cf_mlp_riga_attack_ft',
+                 'cf_mlp_riga_attack_pr', 'cf_mlp_riga_attack_ow', 'cf_mlp_riga_attack_pia',
+                 'cf_mlp_riga_attack_dummy_neurons', 'cf_mlp_riga_attack_distillation'),
 }
 
 # Parse arguments
@@ -53,13 +60,14 @@ method_module = __import__(method_configurations[method], fromlist=['*'])
 globals().update({k: getattr(method_module, k) for k in dir(method_module) if not k.startswith('__')})
 
 # Load model-specific configurations
-config_train, config_data, embed_name, ft_name, pr_name, ow_name, pia_name = model_configurations[model]
+config_train, config_data, embed_name, ft_name, pr_name, ow_name, pia_name, dn_name, dt_name = model_configurations[model]
 config_embed = globals()[embed_name]
 config_attack_ft = globals()[ft_name]
 config_attack_pr = globals()[pr_name]
 config_attack_ow = globals()[ow_name]
 config_attack_pia = globals()[pia_name]
-
+cf_mlp_attack_dummy_neurons = globals()[dn_name]
+config_attack_distillation = globals()[dt_name]
 # Tests configuration
 _tests = Tests(method, model)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -86,7 +94,7 @@ if __name__ == '__main__':
         runtime_wm = -1
         for i in range(nb_run):
             t_start_wm = datetime.datetime.now()
-            temp_acc, temp_ber = _tests.embedding(deepcopy(config_embed), deepcopy(config_data), i + 1)
+            temp_acc, temp_ber = _tests.embedding(deepcopy(config_embed), deepcopy(config_data))
             runtime_wm = datetime.datetime.now() - t_start_wm
             acc += temp_acc
             ber += temp_ber
@@ -114,3 +122,10 @@ if __name__ == '__main__':
     elif operation == "SHOW":
         print("\n---------------------- Weights and activations distribution -----------------------------\n")
         _tests.show_weights_distribution(config_embed, config_data)
+
+    elif operation == "DUMMY_NEURONS":
+        print("\n---------------------- Dummy neurons attack -----------------------------\n")
+        _tests.dummy_neurons_attack(config_embed=config_embed, config_attack=cf_mlp_attack_dummy_neurons,config_data=config_data)
+
+    elif operation == "DISTILLATION":
+        _tests.distillation(config_embed=config_embed, config_attack=config_attack_distillation,config_data=config_data)
