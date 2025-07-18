@@ -306,8 +306,8 @@ class Tests:
         print("Check the accuracy of the watermarked model")
         TrainModel.evaluate(model_wat, test_loader, config_embed)
 
-        print("Compute the BER from the original model (non watermarked)")
         _, ber = self.extract(model_wat, dict_model["supplementary"])
+        print("BER from the original model (non watermarked) == ", ber)
 
         print("Original teacher model:")
         linear_layer_indices = []
@@ -364,13 +364,17 @@ class Tests:
         print("Check the accuracy of the watermarked model")
         TrainModel.evaluate(model_wat, test_loader, config_embed)
 
+        _, ber = self.extract(model_wat, dict_model["supplementary"])
+        print("BER from the watermarked model (non attacked) == ", ber)
+
         # I need to load the teacher model that just has been attacked with the dummy neurons and called the teacher
         teacher = torch.load(config_attack['path_model']).to(config_embed["device"])
 
+        _, ber = self.extract(teacher, dict_model["supplementary"])
+        print("BER of the teacher == ", ber)
+
         # I need to load the student model not watermarked and check if it s not watermarked
-
         student = TrainModel.get_model(config_embed["architecture"], config_embed["device"])
-
         student = train_student(student, teacher, train_loader, temperature=2.0, lr=1e-3,
                                 epochs=config_attack["epoch_attack"], supp=dict_model["supplementary"], device="cuda",
                       extract=self.extract, layer_name=config_attack["layer_name"])

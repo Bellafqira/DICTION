@@ -15,7 +15,7 @@ def get_activation_hook(name, activations_dict):
 def train_student(student, teacher, loader, temperature=2.0, lr=1e-3, epochs=3, supp=None, device="cuda", extract=None, layer_name=None):
     optimizer = optim.Adam(student.parameters(), lr=lr)
     student.train()
-    teacher.eval()
+    # teacher.eval()
     # For the moment the activations are not used, only the logits are used to train the student model
     # teacher_activations = {}
     # student_activations = {}

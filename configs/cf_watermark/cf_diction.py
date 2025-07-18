@@ -578,7 +578,7 @@ cf_resnet18_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                           }
 
 ### ****************************Dummy neurons attack*****************************************
-layer_name="linear"
+layer_name="base.fc.0"
 num_dummy=2
 attack_type="neuron_clique"
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
@@ -599,7 +599,7 @@ cf_resnet18_attack_dummy_neurons = {
 ### ****************************Distillation attack****************************************
 layer_name="linear"
 attack_type="logits"
-epoch_attack = 20
+epoch_attack = 30
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
 
 cf_resnet18_attack_distillation = {
