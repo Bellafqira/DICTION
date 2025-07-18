@@ -11,7 +11,7 @@ device = config_data["device"]
 database = config_data["database"]
 batch_size = config_data["batch_size"]
 
-epochs = 200
+epochs = 20
 criterion = nn.CrossEntropyLoss()
 architecture = "ResNet18"
 

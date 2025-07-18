@@ -425,7 +425,7 @@ cf_cnn_attack_distillation = {
 watermark_size = 256
 epochs_embed = 1000
 epoch_check = 30
-layer_name = ["view"]
+layer_name = ["base.layer1.0.conv1"]
 # layer1.0.conv1', layer3.1.conv1, view
 save_path_embed = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)

@@ -13,7 +13,10 @@ from attacks.dummy_neurons import neuron_clique, neuron_split
 from attacks.distillation import train_student
 from networks.piadetector import PiaDetector
 from util.metric import Metric
-from util.util import TrainModel, Database, Util, CustomTensorDataset
+from util.util import TrainModel, Database, CustomTensorDataset
+
+import torch.backends.cudnn
+torch.backends.cudnn.enabled = False
 
 
 class Tests:
@@ -309,10 +312,10 @@ class Tests:
         print("Original teacher model:")
         linear_layer_indices = []
 
-        for i, layer in enumerate(model_wat.modules()):
+        for i, (name, layer) in enumerate(model_wat.named_modules()):
             if isinstance(layer, nn.Linear):
-                print(f"{i}. Linear layer: {layer.in_features} -> {layer.out_features}")
-                linear_layer_indices.append(i)
+                print(f"{i}. Linear layer '{name}': {layer.in_features} -> {layer.out_features}")
+                linear_layer_indices.append((i, name))
 
         print(f"Positions of nn.Linear layers: {linear_layer_indices}")
 

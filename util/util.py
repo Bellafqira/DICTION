@@ -12,6 +12,7 @@ from networks.cnn import CnnModel
 from networks.mlp import MLP
 from networks.mlp_riga import MLP_RIGA
 from networks.resnet import res_net18
+from networks.resnet18_two_linear import ResNet18TwoLinear
 from torch.utils.data import Dataset
 
 devices = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -306,8 +307,10 @@ class TrainModel:
         elif architecture == "MLP":
             # ep50, bs =512, lr=0.01, opt=Adam
             model = MLP().to(device)
+        # elif architecture == "ResNet18":
+        #     model = res_net18().to(device)
         elif architecture == "ResNet18":
-            model = res_net18().to(device)
+            model = ResNet18TwoLinear().to(device)
         elif architecture == "MLP_RIGA":
             model = MLP_RIGA().to(device)
         else:

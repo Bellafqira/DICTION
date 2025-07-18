@@ -17,18 +17,18 @@ def train_student(student, teacher, loader, temperature=2.0, lr=1e-3, epochs=3, 
     student.train()
     teacher.eval()
     # For the moment the activations are not used, only the logits are used to train the student model
-    teacher_activations = {}
-    student_activations = {}
-    teacher.fc2.register_forward_hook(get_activation_hook(layer_name, teacher_activations))
-    student.fc2.register_forward_hook(get_activation_hook(layer_name, student_activations))
+    # teacher_activations = {}
+    # student_activations = {}
+    # teacher.fc2.register_forward_hook(get_activation_hook(layer_name, teacher_activations))
+    # student.fc2.register_forward_hook(get_activation_hook(layer_name, student_activations))
 
     for epoch in range(epochs):
         loop = tqdm(loader, leave=True)
         train_loss = total = correct =0.0
         for batch_idx, (images, labels) in enumerate(loop):
             images, labels = images.to(device), labels.to(device)
-            teacher_activations.clear()
-            student_activations.clear()
+            # teacher_activations.clear()
+            # student_activations.clear()
 
             optimizer.zero_grad()
 
@@ -36,10 +36,10 @@ def train_student(student, teacher, loader, temperature=2.0, lr=1e-3, epochs=3, 
             with torch.no_grad():
                 teacher_logits= teacher(images)
                     # Get activations from fc2
-                t = teacher_activations[layer_name]
+                # t = teacher_activations[layer_name]
 
             student_logits = student(images)
-            s = student_activations[layer_name]
+            # s = student_activations[layer_name]
 
             # Apply temperature-scaled softmax
             p_teacher = F.softmax(teacher_logits / temperature, dim=1)

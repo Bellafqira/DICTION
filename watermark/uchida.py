@@ -15,6 +15,9 @@ def embed(init_model, test_loader, train_loader, config) -> object:
 
     # Instance the target model and Uchida perceptron
     model = deepcopy(init_model)
+    print("the names of the layers of the target model")
+    for name, param in model.named_parameters():
+        print(name)
     weights_selected_layer = [param for name, param in model.named_parameters() if name == config["layer_name"]][0]
     selected_weights = torch.flatten(weights_selected_layer.mean(dim=0))
 

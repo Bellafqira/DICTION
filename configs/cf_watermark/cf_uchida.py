@@ -241,7 +241,7 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
 
                     }
 
-### *************** Overwriting attak ****************************
+### *************** Overwriting attack ****************************
 layer_name = "fc1.weight"
 epoch_attack = 100
 watermark_size = 512
@@ -325,7 +325,7 @@ cf_cnn_attack_distillation = {
 #********************************************************************
 watermark_size = 256
 epochs_embed = 1000
-layer_name = "linear.weight"
+layer_name = "base.fc.0.weight"
 epoch_check = 30
 save_path_attack = "_l" + layer_name + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" \
                    + str(epoch_check)
@@ -442,7 +442,7 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
 cf_resnet18_attack_pia = {}
 
 ### ****************************Dummy neurons attack***************************************
-layer_name="linear"
+layer_name="base.fc.0"
 num_dummy=2
 attack_type="neuron_clique"
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
