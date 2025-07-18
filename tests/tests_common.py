@@ -15,8 +15,6 @@ from networks.piadetector import PiaDetector
 from util.metric import Metric
 from util.util import TrainModel, Database, Util, CustomTensorDataset
 
-from dummy_neurons0 import neuron_clique, neuron_split
-
 
 class Tests:
     def __init__(self, method: str, model: str):

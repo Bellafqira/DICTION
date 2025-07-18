@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import copy
-from typing import Tuple
 
 # This code present the attack proposed in "Rethinking White-Box Watermarks on Deep Learning Models
 # under Neural Structural Obfuscation" : https://www.usenix.org/system/files/sec23fall-prepub-444-yan-yifan.pdf

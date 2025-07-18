@@ -3,7 +3,10 @@ from configs.cf_train.cf_mlp import cf_mlp_dict
 from configs.cf_train.cf_mlp_riga import cf_mlp_riga_dict
 from configs.cf_train.cf_resnet18 import cf_resnet18_dict
 
-# *******************watermarking MLP architecture *********************************
+#********************************************************************
+#************** watermarking MLP architecture ***********************
+#********************************************************************
+method_wat= "uchida"
 watermark_size = 256
 epochs_embed = 1000
 layer_name = "fc2.weight"
@@ -27,7 +30,7 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,
                 "architecture": cf_mlp_dict["architecture"],
 
                 "path_model": cf_mlp_dict["save_path"],
-                "save_path": "results/watermarked_models/uchida/" + cf_mlp_dict['architecture'].lower() + "/"
+                "save_path": "results/watermarked_models/" + method_wat+ "/" + cf_mlp_dict['architecture'].lower() + "/"
                              + save_path_embed + ".pth",
 
                 "momentum": 0,
@@ -57,28 +60,28 @@ cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
                     "criterion": cf_mlp_dict["criterion"],
 
                     "device": cf_mlp_dict["device"],
-                    "save_path": "results/attacks/finetuning/uchida/" + cf_mlp_dict[
+                    "save_path": "results/attacks/finetuning/" + method_wat+ "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
 
-                    "save_fig_path": "results/attacks/finetuning/uchida/" + cf_mlp_dict[
+                    "save_fig_path": "results/attacks/finetuning/" + method_wat+ "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_uchida_" + cf_mlp_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
 
-### *********************************Pruning attack**************************************
+### *********************************Pruning attack****************************************
 cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
                     "path_model": cf_mlp_embed["save_path"],
                     "watermark_size": watermark_size,
                     "criterion": cf_mlp_dict["criterion"],
                     "device": cf_mlp_dict["device"],
                     "architecture": cf_mlp_dict["architecture"],
-                    "save_path": "results/attacks/pruning/uchida/" + cf_mlp_dict[
+                    "save_path": "results/attacks/pruning/" + method_wat+ "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     }
 
-### *********************************Overwriting attack*********************************
+### *********************************Overwriting attack************************************
 layer_name = "fc2.weight"
 epoch_attack = 100
 watermark_size = 256
@@ -101,7 +104,7 @@ cf_mlp_attack_ow = {"configuration": cf_mlp_dict,
                     "scheduler": "MultiStepLR",
                     "architecture": cf_mlp_dict["architecture"],
 
-                    "save_path": "results/watermarked_models/uchida/" + cf_mlp_dict['architecture'].lower() + "/"
+                    "save_path": "results/watermarked_models/" + method_wat+ "/" + cf_mlp_dict['architecture'].lower() + "/"
                                  + save_path_embed + ".pth",
 
                     "momentum": 0,
@@ -109,17 +112,17 @@ cf_mlp_attack_ow = {"configuration": cf_mlp_dict,
                     "gamma": 0,
                     "criterion": cf_mlp_dict["criterion"],
                     "device": cf_mlp_dict["device"],
-                    "save_fig_path": "results/attacks/overwriting/uchida/" + cf_mlp_dict[
+                    "save_fig_path": "results/attacks/overwriting/" + method_wat+ "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_uchida" + cf_mlp_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
 
-### ******************************PIA attack**********************************************
+### *********************************PIA attack**********************************************
 cf_mlp_attack_pia = {}
 
-### ****************************Dummy neurons attack***************************************
+### *********************************Dummy neurons attack***************************************
 layer_name="fc2"
 num_dummy=2
 attack_type="neuron_clique"
@@ -129,9 +132,9 @@ cf_mlp_attack_dummy_neurons = {
     "configuration": cf_mlp_dict,
     "database": cf_mlp_dict["database"],
     "path_model": cf_mlp_embed["save_path"],
-    "save_path": "results/attacks/dummy_neurons/uchida/" + cf_mlp_dict[
+    "save_path": "results/attacks/dummy_neurons/" + method_wat+ "/" + cf_mlp_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "num_dummy": 2, # if neuron_clique
@@ -139,7 +142,7 @@ cf_mlp_attack_dummy_neurons = {
     "num_splits": 2 # if neuron_split
 }
 
-### **********************Distillation attack************************
+### *********************************Distillation attack************************
 layer_name="fc2"
 attack_type="logits"
 epoch_attack = 20
@@ -149,16 +152,18 @@ cf_mlp_attack_distillation = {
     "configuration": cf_mlp_dict,
     "database": cf_mlp_dict["database"],
     "path_model": cf_mlp_attack_dummy_neurons["save_path"],
-    "save_path": "results/attacks/distillation/uchida/" + cf_mlp_dict[
+    "save_path": "results/attacks/distillation/" + method_wat+ "/" + cf_mlp_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "epoch_attack": epoch_attack
 
 }
 
-# ****************************** watermarking CNN architecture *****************************************
+#********************************************************************
+#************** watermarking CNN architecture ***********************
+#********************************************************************
 watermark_size = 256
 epochs_embed = 1000
 layer_name = "fc1.weight"
@@ -180,7 +185,7 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "scheduler": "MultiStepLR",
                 "architecture": cf_cnn_dict['architecture'],
 
-                "save_path": "results/watermarked_models/uchida/" + cf_cnn_dict['architecture'].lower() + "/"
+                "save_path": "results/watermarked_models/" + method_wat+ "/" + cf_cnn_dict['architecture'].lower() + "/"
                              + save_path_embed + ".pth",
 
                 "path_model": cf_cnn_dict["save_path"],
@@ -209,14 +214,14 @@ cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "scheduler": "MultiStepLR",
                     "opt": "Adam",
                     "architecture": cf_cnn_dict["architecture"],
-                    "save_path": "results/attacks/finetuning/res_encrypt/" + cf_cnn_dict[
+                    "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "momentum": 0.9,
                     "milestones": [150, 200],
                     "gamma": 0.1,
                     "criterion": cf_cnn_dict["criterion"],
                     "device": cf_cnn_dict["device"],
-                    "save_fig_path": "results/attacks/finetuning/uchida/" + cf_cnn_dict[
+                    "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_uchida_CNN",
                     "y_label": "BER/ACC",
@@ -229,7 +234,7 @@ cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
                     "path_model": cf_cnn_embed["save_path"],
                     "watermark_size": watermark_size,
                     "architecture": cf_cnn_dict['architecture'],
-                    "save_path": "results/attacks/pruning/uchida/" + cf_cnn_dict[
+                    "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "criterion": cf_cnn_dict["criterion"],
                     "device": cf_cnn_dict["device"],
@@ -259,7 +264,7 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "architecture": cf_cnn_dict["architecture"],
 
                     "path_model": cf_cnn_embed["save_path"],
-                    "save_path": "results/attacks/overwriting/uchida/" + cf_cnn_dict[
+                    "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
 
                     "momentum": 0,
@@ -267,7 +272,7 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "gamma": 0,
                     "criterion": cf_cnn_dict["criterion"],
                     "device": cf_cnn_dict["device"],
-                    "save_fig_path": "results/attacks/overwriting/uchida/" + cf_cnn_dict[
+                    "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_uchida_cnn" + cf_cnn_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
@@ -286,9 +291,9 @@ cf_cnn_attack_dummy_neurons = {
     "configuration": cf_cnn_dict,
     "database": cf_cnn_dict["database"],
     "path_model": cf_cnn_embed["save_path"],
-    "save_path": "results/attacks/dummy_neurons/uchida/" + cf_cnn_dict[
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_cnn_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_cnn_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "num_dummy": 2, # if neuron_clique
@@ -306,16 +311,18 @@ cf_cnn_attack_distillation = {
     "configuration": cf_cnn_dict,
     "database": cf_cnn_dict["database"],
     "path_model": cf_cnn_attack_dummy_neurons["save_path"],
-    "save_path": "results/attacks/distillation/uchida/" + cf_mlp_dict[
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_mlp_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_cnn_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "epoch_attack": epoch_attack
 
 }
 
-# ******************************* watermarking Resnet18 architecture *********************************
+#********************************************************************
+#************** watermarking Resnet18 architecture ******************
+#********************************************************************
 watermark_size = 256
 epochs_embed = 1000
 layer_name = "linear.weight"
@@ -338,7 +345,7 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "scheduler": "MultiStepLR",
                      "architecture": cf_resnet18_dict['architecture'],
 
-                     "save_path": "results/watermarked_models/uchida/" + cf_resnet18_dict[
+                     "save_path": "results/watermarked_models/" + method_wat + "/" + cf_resnet18_dict[
                          'architecture'].lower() + "/" + save_path_embed + ".pth",
 
                      # relu but change in mlp cd
@@ -366,14 +373,14 @@ cf_resnet18_attack_ft = {"configuration": cf_resnet18_dict,
                          "scheduler": "MultiStepLR",
                          "opt": "Adam",
                          "architecture": cf_resnet18_dict["architecture"],
-                         "save_path": "results/attacks/finetuning/uchida/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
                          "milestones": [150, 200],
                          "gamma": 0,
                          "criterion": cf_resnet18_dict["criterion"],
                          "device": cf_resnet18_dict["device"],
-                         "save_fig_path": "results/attacks/finetuning/uchida/" + cf_resnet18_dict[
+                         "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_res_encrypt_resnet18",
                          "y_label": "BER/ACC",
@@ -388,7 +395,7 @@ cf_resnet18_attack_pr = {"configuration": cf_resnet18_dict,
                          "criterion": cf_resnet18_dict["criterion"],
                          "device": cf_resnet18_dict["device"],
                          "architecture": cf_resnet18_dict["architecture"],
-                         "save_path": "results/attacks/pruning/res_encrypt/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
 
                          }
@@ -416,7 +423,7 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "opt": "Adam",
                          "scheduler": "MultiStepLR",
                          "architecture": cf_resnet18_dict["architecture"],
-                         "save_path": "results/attacks/overwriting/uchida/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
 
                          "momentum": 0,
@@ -424,7 +431,7 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "gamma": 0,
                          "criterion": cf_resnet18_dict["criterion"],
                          "device": cf_resnet18_dict["device"],
-                         "save_fig_path": "results/attacks/overwriting/uchida/" + cf_resnet18_dict[
+                         "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_res_encrypt" + cf_resnet18_dict["architecture"].lower(),
                          "y_label": "BER/ACC",
@@ -435,18 +442,18 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
 cf_resnet18_attack_pia = {}
 
 ### ****************************Dummy neurons attack***************************************
-layer_name="fc1"
+layer_name="linear"
 num_dummy=2
 attack_type="neuron_clique"
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
 
-cf_cnn_attack_dummy_neurons = {
+cf_resnet18_attack_dummy_neurons = {
     "configuration": cf_resnet18_dict,
     "database": cf_resnet18_dict["database"],
     "path_model": cf_resnet18_embed["save_path"],
-    "save_path": "results/attacks/dummy_neurons/uchida/" + cf_resnet18_dict[
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_resnet18_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_resnet18_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "num_dummy": 2, # if neuron_clique
@@ -455,7 +462,7 @@ cf_cnn_attack_dummy_neurons = {
 }
 
 ### **********************Distillation attack************************
-layer_name="fc1"
+layer_name="linear"
 attack_type="logits"
 epoch_attack = 20
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
@@ -464,16 +471,19 @@ cf_resnet18_attack_distillation = {
     "configuration": cf_resnet18_dict,
     "database": cf_resnet18_dict["database"],
     "path_model": cf_resnet18_attack_dummy_neurons["save_path"],
-    "save_path": "results/attacks/distillation/uchida/" + cf_resnet18_dict[
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_resnet18_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_resnet18_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "epoch_attack": epoch_attack
 
 }
 
-# ************* watermarking MLP RIGA architecture ****************
+#********************************************************************
+#************** watermarking MLP RIGA architecture ******************
+#********************************************************************
+
 watermark_size = 256
 epochs_embed = 1000
 layer_name = "fc1.weight"
@@ -497,7 +507,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "architecture": cf_mlp_riga_dict["architecture"],
 
                      "path_model": cf_mlp_riga_dict["save_path"],
-                     "save_path": "results/watermarked_models/uchida/" + cf_mlp_riga_dict['architecture'].lower() + "/"
+                     "save_path": "results/watermarked_models/" + method_wat + "/" + cf_mlp_riga_dict['architecture'].lower() + "/"
                                   + save_path_embed + ".pth",
 
                      "momentum": 0,
@@ -527,10 +537,10 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_dict,
                          "criterion": cf_mlp_riga_dict["criterion"],
 
                          "device": cf_mlp_riga_dict["device"],
-                         "save_path": "results/attacks/finetuning/uchida/" + cf_mlp_riga_dict[
+                         "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
 
-                         "save_fig_path": "results/attacks/finetuning/uchida/" + cf_mlp_riga_dict[
+                         "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_uchida_" + cf_mlp_riga_dict["architecture"].lower(),
                          "y_label": "BER/ACC",
@@ -544,7 +554,7 @@ cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
                          "criterion": cf_mlp_riga_dict["criterion"],
                          "device": cf_mlp_riga_dict["device"],
                          "architecture": cf_mlp_riga_dict["architecture"],
-                         "save_path": "results/attacks/pruning/uchida/" + cf_mlp_riga_dict[
+                         "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          }
 
@@ -571,7 +581,7 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_dict,
                          "scheduler": "MultiStepLR",
                          "architecture": cf_mlp_riga_dict["architecture"],
 
-                         "save_path": "results/watermarked_models/uchida/" + cf_mlp_riga_dict[
+                         "save_path": "results/watermarked_models/" + method_wat + "/" + cf_mlp_riga_dict[
                              'architecture'].lower() + "/"
                                       + save_path_embed + ".pth",
 
@@ -580,7 +590,7 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_dict,
                          "gamma": 0,
                          "criterion": cf_mlp_riga_dict["criterion"],
                          "device": cf_mlp_riga_dict["device"],
-                         "save_fig_path": "results/attacks/overwriting/uchida/" + cf_mlp_riga_dict[
+                         "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_uchida" + cf_mlp_riga_dict["architecture"].lower(),
                          "y_label": "BER/ACC",
@@ -600,9 +610,9 @@ cf_mlp_riga_attack_dummy_neurons = {
     "configuration": cf_mlp_riga_dict,
     "database": cf_mlp_riga_dict["database"],
     "path_model": cf_mlp_riga_embed["save_path"],
-    "save_path": "results/attacks/dummy_neurons/uchida/" + cf_mlp_riga_dict[
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_mlp_riga_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_riga_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "num_dummy": 2, # if neuron_clique
@@ -620,9 +630,9 @@ cf_mlp_riga_attack_distillation = {
     "configuration": cf_mlp_riga_dict,
     "database": cf_mlp_riga_dict["database"],
     "path_model": cf_mlp_riga_attack_dummy_neurons["save_path"],
-    "save_path": "results/attacks/distillation/uchida/" + cf_mlp_riga_dict[
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_mlp_riga_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_riga_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "epoch_attack": epoch_attack

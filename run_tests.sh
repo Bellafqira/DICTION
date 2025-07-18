@@ -3,8 +3,8 @@
 source .venv/bin/activate
 
 methods=("UCHIDA") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT", "HUFUNET")
-models=("MLP") # values: ("MLP" "CNN" "RESNET18" "MLP_RIGA")
-operations=("DISTILLATION") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA" "DUMMY_NEURONS" "DISTILLATION")
+models=("RESNET18") # values: ("MLP" "CNN" "RESNET18" "MLP_RIGA")
+operations=("DUMMY_NEURONS") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA" "DUMMY_NEURONS" "DISTILLATION")
 
 for method in "${methods[@]}"; do
     for model in "${models[@]}"; do

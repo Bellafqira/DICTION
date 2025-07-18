@@ -60,7 +60,7 @@ method_module = __import__(method_configurations[method], fromlist=['*'])
 globals().update({k: getattr(method_module, k) for k in dir(method_module) if not k.startswith('__')})
 
 # Load model-specific configurations
-config_train, config_data, embed_name, ft_name, pr_name, ow_name, pia_name, dn_name, dt_name =  [model]
+config_train, config_data, embed_name, ft_name, pr_name, ow_name, pia_name, dn_name, dt_name =  model_configurations[model]
 config_embed = globals()[embed_name]
 config_attack_ft = globals()[ft_name]
 config_attack_pr = globals()[pr_name]

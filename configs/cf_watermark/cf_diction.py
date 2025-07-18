@@ -5,14 +5,16 @@ from configs.cf_train.cf_resnet18 import cf_resnet18_dict
 
 from copy import deepcopy
 
-# ************* watermarking MLP architecture ****************
+#********************************************************************
+#************** watermarking MLP architecture ***********************
+#********************************************************************
+method_wat = "diction"
 watermark_size = 256
 epochs_embed = 10000
 epoch_check = 30
 layer_name = ["fc2"]
 save_path_embed = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
-
 cf_mlp_embed = {"configuration": cf_mlp_dict,  # the configuration of the target model
                 "database": cf_mlp_dict["database"],  # the database to train the target model
                 "watermark_size": watermark_size,  # the size of the watermark to be embedded
@@ -55,14 +57,14 @@ cf_mlp_embed = {"configuration": cf_mlp_dict,  # the configuration of the target
                 "device": cf_mlp_dict["device"],  # the device to train the target model
 
                 "path_model": cf_mlp_dict["save_path"],  # Path of the original model
-                "save_path": "results/watermarked_models/diction/" + cf_mlp_dict['architecture'].lower() + "/"
+                "save_path": "results/watermarked_models/" + method_wat + "/" + cf_mlp_dict['architecture'].lower() + "/"
                              + save_path_embed + ".pth"  # Path to save the target/watermarked model
 
                 }
 
+#### *********************************Fine tuning attack************************************
 epoch_attack = 50
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + ".pth"
-
 cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
                     "database": cf_mlp_dict["database"],
                     "watermark_size": watermark_size,
@@ -74,38 +76,39 @@ cf_mlp_attack_ft = {"configuration": cf_mlp_dict,
                     "architecture": cf_mlp_dict["architecture"],
 
                     "path_model": cf_mlp_embed["save_path"],
-                    "save_path": "results/attacks/finetuning/diction/" + cf_mlp_dict[
+                    "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "momentum": 0,
                     "milestones": [100, 2000],
                     "gamma": 0,
                     "criterion": cf_mlp_dict["criterion"],
                     "device": cf_mlp_dict["device"],
-                    "save_fig_path": "results/attacks/finetuning/diction/" + cf_mlp_dict[
+                    "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_diction_" + cf_mlp_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
 
+### *********************************Pruning attack****************************************
 cf_mlp_attack_pr = {"configuration": cf_mlp_dict,
                     "database": cf_mlp_dict["database"],
                     "path_model": cf_mlp_embed["save_path"],
                     "watermark_size": watermark_size,
                     "criterion": cf_mlp_dict["criterion"],
-                    "save_path": "results/attacks/pruning/diction/" + cf_mlp_dict[
+                    "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "architecture": cf_mlp_dict["architecture"],
                     "device": cf_mlp_dict["device"],
                     }
 
+### *********************************Overwriting attack************************************
 epoch_attack = 1000
 watermark_size = 256
 epoch_check = 30
 layer_name = ["fc2"]
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) \
                    + "_epc" + str(epoch_check)
-
 cf_mlp_attack_ow = {"configuration": cf_cnn_dict,
                     "database": cf_mlp_dict["database"],
                     "path_model": cf_mlp_embed["save_path"],
@@ -140,20 +143,21 @@ cf_mlp_attack_ow = {"configuration": cf_cnn_dict,
                     "wd": 1e-4,
                     "scheduler": "MultiStepLR",
                     "architecture": cf_mlp_dict["criterion"],
-                    "save_path": "results/attacks/overwriting/diction/" + cf_mlp_dict[
+                    "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "momentum": 0,
                     "milestones": [20, 10],
                     "gamma": 0.1,
                     "criterion": cf_mlp_dict["criterion"],
                     "device": cf_mlp_dict["device"],
-                    "save_fig_path": "results/attacks/overwriting/diction/" + cf_mlp_dict[
+                    "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_mlp_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_diction_" + cf_mlp_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
 
+### *********************************PIA attack**********************************************
 cf_non_watermarked = deepcopy(cf_mlp_dict)
 cf_non_watermarked["epochs"] = 2
 cf_non_watermarked["show_acc_epoch"] = False
@@ -163,16 +167,15 @@ cf_watermarked["show_acc_epoch"] = False
 nb_examples = 800
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(
     cf_watermarked["watermark_size"]) + "_ep" + str(cf_non_watermarked["epochs"]) + "_nb_examples" + str(nb_examples)
-
 cf_mlp_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                      "train_watermarked": cf_watermarked,
-                     "save_path": "results/attacks/pia/diction/" + cf_mlp_dict[
+                     "save_path": "results/attacks/pia/" + method_wat + "/" + cf_mlp_dict[
                          "architecture"].lower() + "/" + save_path_attack + ".pth",
                      "nb_examples": nb_examples,
 
                      }
 
-### ****************************Dummy neurons attack***************************************
+### *********************************Dummy neurons attack***************************************
 layer_name="fc2"
 num_dummy=2
 attack_type="neuron_clique"
@@ -182,9 +185,9 @@ cf_mlp_attack_dummy_neurons = {
     "configuration": cf_mlp_dict,
     "database": cf_mlp_dict["database"],
     "path_model": cf_mlp_embed["save_path"],
-    "save_path": "results/attacks/dummy_neurons/diction/" + cf_mlp_dict[
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_mlp_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "num_dummy": 2, # if neuron_clique
@@ -192,7 +195,7 @@ cf_mlp_attack_dummy_neurons = {
     "num_splits": 2 # if neuron_split
 }
 
-### **********************Distillation attack************************
+### *********************************Distillation attack************************
 layer_name="fc2"
 attack_type="logits"
 epoch_attack = 20
@@ -202,17 +205,19 @@ cf_mlp_attack_distillation = {
     "configuration": cf_mlp_dict,
     "database": cf_mlp_dict["database"],
     "path_model": cf_mlp_attack_dummy_neurons["save_path"],
-    "save_path": "results/attacks/distillation/diction/" + cf_mlp_dict[
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_mlp_dict[
         "architecture"].lower() + "/" + save_path_attack + ".pth",
-    "device":device,
+    "device":cf_mlp_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
     "epoch_attack": epoch_attack
 
 }
 
+#********************************************************************
+#************** watermarking CNN architecture ***********************
+#********************************************************************
 
-# ********************************* watermarking CNN architecture **********************************************
 watermark_size = 256
 epochs_embed = 10000
 layer_name = ["fc1"]  # fc1
@@ -259,14 +264,14 @@ cf_cnn_embed = {"configuration": cf_cnn_dict,
                 "device": cf_cnn_dict["device"],
 
                 "path_model": cf_cnn_dict["save_path"],
-                "save_path": "results/watermarked_models/diction/" + cf_cnn_dict['architecture'].lower() + "/"
+                "save_path": "results/watermarked_models/" + method_wat + "/" + cf_cnn_dict['architecture'].lower() + "/"
                              + save_path_embed + ".pth",
                 }
 
+#### *********************************Fine tuning attack*************************************
 epoch_attack = 50
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
                    str(epoch_check)
-
 cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed['save_path'],
@@ -285,9 +290,9 @@ cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "criterion": cf_cnn_dict["criterion"],
                     "device": cf_cnn_dict["device"],
 
-                    "save_path": "results/attacks/finetuning/diction/" + cf_cnn_dict[
+                    "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
-                    "save_fig_path": "results/attacks/finetuning/diction/" + cf_cnn_dict[
+                    "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
 
                     "x_label": "Partition_diction_CNN",
@@ -295,24 +300,25 @@ cf_cnn_attack_ft = {"configuration": cf_cnn_dict,
                     "show_acc_epoch": False
                     }
 
+#### *********************************Pruning attack*****************************************
 cf_cnn_attack_pr = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed["save_path"],
                     "watermark_size": watermark_size,
                     "criterion": cf_cnn_dict["criterion"],
                     "architecture": cf_cnn_dict["architecture"],
-                    "save_path": "results/attacks/pruning/diction/" + cf_cnn_dict[
+                    "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
                     "device": cf_cnn_dict["device"],
                     }
 
+#### *********************************Overwriting attack*************************************
 layer_name = ["fc1"]
 epoch_attack = 30
 epoch_check = 20
 watermark_size = 256
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) \
                    + "_epc" + str(epoch_check)
-
 cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "database": cf_cnn_dict["database"],
                     "path_model": cf_cnn_embed["save_path"],
@@ -357,23 +363,65 @@ cf_cnn_attack_ow = {"configuration": cf_cnn_dict,
                     "criterion": cf_cnn_dict["criterion"],
                     "device": cf_cnn_dict["device"],
 
-                    "save_path": "results/attacks/overwriting/diction/" + cf_cnn_dict[
+                    "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".pth",
-                    "save_fig_path": "results/attacks/overwriting/diction/" + cf_cnn_dict[
+                    "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_cnn_dict[
                         "architecture"].lower() + "/" + save_path_attack + ".png",
                     "x_label": "Partition_diction_" + cf_cnn_dict["architecture"].lower(),
                     "y_label": "BER/ACC",
                     "show_acc_epoch": False
                     }
 
+#### *********************************PIA attack*************************************
 cf_cnn_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                      "train_watermarked": cf_watermarked,
-                     "save_path": "results/attacks/pia/diction/" + cf_cnn_dict[
+                     "save_path": "results/attacks/pia/" + method_wat + "/" + cf_cnn_dict[
                          "architecture"].lower() + "/" + save_path_attack + ".pth",
                      "nb_examples": nb_examples
                      }
 
-# ************* watermarking Resnet18 architecture ****************
+### ****************************Dummy neurons attack***************************************
+layer_name="fc1"
+num_dummy=2
+attack_type="neuron_clique"
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
+
+cf_cnn_attack_dummy_neurons = {
+    "configuration": cf_cnn_dict,
+    "database": cf_cnn_dict["database"],
+    "path_model": cf_cnn_embed["save_path"],
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_cnn_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_cnn_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "num_dummy": 2, # if neuron_clique
+    "neuron_idx": 10, # if neuron_split
+    "num_splits": 2 # if neuron_split
+}
+
+### **********************Distillation attack************************
+layer_name="fc1"
+attack_type="logits"
+epoch_attack = 20
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
+
+cf_cnn_attack_distillation = {
+    "configuration": cf_cnn_dict,
+    "database": cf_cnn_dict["database"],
+    "path_model": cf_cnn_attack_dummy_neurons["save_path"],
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_mlp_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_cnn_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "epoch_attack": epoch_attack
+
+}
+
+#********************************************************************
+#************** watermarking Resnet18 architecture ******************
+#********************************************************************
 watermark_size = 256
 epochs_embed = 1000
 epoch_check = 30
@@ -381,7 +429,6 @@ layer_name = ["view"]
 # layer1.0.conv1', layer3.1.conv1, view
 save_path_embed = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)
-
 cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "database": cf_resnet18_dict["database"],
                      "watermark_size": watermark_size,
@@ -415,7 +462,7 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "opt": "Adam",
                      "scheduler": "MultiStepLR",
                      "architecture": cf_resnet18_dict['architecture'],
-                     "save_path": "results/watermarked_models/diction/" + cf_resnet18_dict[
+                     "save_path": "results/watermarked_models/" + method_wat + "/" + cf_resnet18_dict[
                          'architecture'].lower() + "/" + save_path_embed + ".pth",
                      # relu but change in mlp cd
                      "path_model": cf_resnet18_dict["save_path"],
@@ -426,10 +473,10 @@ cf_resnet18_embed = {"configuration": cf_resnet18_dict,
                      "device": cf_resnet18_dict["device"]
                      }
 
+#### *********************************Fine tuning attack*************************************
 epoch_attack = 50
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
                    str(epoch_check)
-
 cf_resnet18_attack_ft = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
                          "path_model": cf_resnet18_embed['save_path'] + '.pth',
@@ -442,31 +489,33 @@ cf_resnet18_attack_ft = {"configuration": cf_resnet18_dict,
                          "scheduler": "MultiStepLR",
                          "opt": "Adam",
                          "architecture": cf_resnet18_dict["architecture"],
-                         "save_path": "results/attacks/finetuning/diction/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
                          "milestones": [20, 200],
                          "gamma": 0.1,
                          "criterion": cf_resnet18_dict["criterion"],
                          "device": cf_resnet18_dict["device"],
-                         "save_fig_path": "results/attacks/finetuning/diction/" + cf_resnet18_dict[
+                         "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_diction_resnet18",
                          "y_label": "BER/ACC",
                          "show_acc_epoch": False
                          }
 
+#### *********************************Pruning attack*****************************************
 cf_resnet18_attack_pr = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
                          "path_model": cf_resnet18_embed["save_path"] + ".pth",
                          "watermark_size": watermark_size,
                          "criterion": cf_resnet18_dict["criterion"],
                          "architecture": cf_resnet18_dict["architecture"],
-                         "save_path": "results/attacks/pruning/diction/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "device": cf_resnet18_dict["device"],
                          }
 
+#### *********************************Overwriting attack*************************************
 layer_name = ["view"]
 # layer1.0.conv1', layer3.1.conv1, view
 epoch_attack = 100
@@ -474,7 +523,6 @@ watermark_size = 256
 epoch_check = 20
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) \
                    + "_epc" + str(epoch_check)
-
 cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "database": cf_resnet18_dict["database"],
                          "path_model": cf_resnet18_embed["save_path"] + ".pth",
@@ -507,28 +555,70 @@ cf_resnet18_attack_ow = {"configuration": cf_resnet18_dict,
                          "opt": "Adam",
                          "scheduler": "MultiStepLR",
                          "architecture": cf_resnet18_dict["criterion"],
-                         "save_path": "results/attacks/overwriting/diction/" + cf_resnet18_dict[
+                         "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
                          "milestones": [1000, 2000],
                          "gamma": 0,
                          "criterion": cf_resnet18_dict["criterion"],
                          "device": cf_resnet18_dict["device"],
-                         "save_fig_path": "results/attacks/overwriting/diction/" + cf_resnet18_dict[
+                         "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_resnet18_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_diction_" + cf_resnet18_dict["architecture"].lower(),
                          "y_label": "BER/ACC",
                          "show_acc_epoch": False
                          }
 
+#### *********************************PIA attack*********************************************
 cf_resnet18_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                           "train_watermarked": cf_watermarked,
-                          "save_path": "results/attacks/pia/diction/" + cf_resnet18_dict[
+                          "save_path": "results/attacks/pia/" + method_wat + "/" + cf_resnet18_dict[
                               "architecture"].lower() + "/" + save_path_attack + ".pth",
                           "nb_examples": nb_examples
                           }
 
-# ************* watermarking MLP_RIGA architecture ****************
+### ****************************Dummy neurons attack*****************************************
+layer_name="linear"
+num_dummy=2
+attack_type="neuron_clique"
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
+cf_resnet18_attack_dummy_neurons = {
+    "configuration": cf_resnet18_dict,
+    "database": cf_resnet18_dict["database"],
+    "path_model": cf_resnet18_embed["save_path"],
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_resnet18_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_resnet18_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "num_dummy": 2, # if neuron_clique
+    "neuron_idx": 10, # if neuron_split
+    "num_splits": 2 # if neuron_split
+}
+
+### ****************************Distillation attack****************************************
+layer_name="linear"
+attack_type="logits"
+epoch_attack = 20
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
+
+cf_resnet18_attack_distillation = {
+    "configuration": cf_resnet18_dict,
+    "database": cf_resnet18_dict["database"],
+    "path_model": cf_resnet18_attack_dummy_neurons["save_path"],
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_resnet18_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_resnet18_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "epoch_attack": epoch_attack
+
+}
+
+#********************************************************************
+#************** watermarking MLP_RIGA architecture *******************
+#********************************************************************
+
 watermark_size = 256
 epochs_embed = 101
 layer_name = ["fc2"]  # "conv1", "flatten", "fc2"
@@ -572,7 +662,7 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "architecture": cf_mlp_riga_dict["architecture"],
 
                      "path_model": cf_mlp_riga_dict["save_path"],
-                     "save_path": "results/watermarked_models/diction/" + cf_mlp_riga_dict['architecture'].lower() + "/"
+                     "save_path": "results/watermarked_models/" + method_wat + "/" + cf_mlp_riga_dict['architecture'].lower() + "/"
                                   + save_path_embed + ".pth",
                      "momentum": 0,
                      "milestones": [20, 1000],
@@ -581,10 +671,10 @@ cf_mlp_riga_embed = {"configuration": cf_mlp_riga_dict,
                      "device": cf_mlp_riga_dict["device"]
                      }
 
+#### *********************************Fine tuning attack************************************
 epoch_attack = 50
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) + "_epc" + \
                    str(epoch_check)
-
 cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
                          "database": cf_mlp_riga_embed["database"],
                          "watermark_size": watermark_size,
@@ -596,37 +686,38 @@ cf_mlp_riga_attack_ft = {"configuration": cf_mlp_riga_embed,
                          "architecture": cf_mlp_riga_dict["architecture"],
 
                          "path_model": cf_mlp_riga_embed["save_path"],
-                         "save_path": "results/attacks/finetuning/diction/" + cf_mlp_riga_dict[
+                         "save_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
                          "milestones": [20, 50],
                          "gamma": 0.1,
                          "criterion": cf_mlp_riga_dict["criterion"],
                          "device": cf_mlp_riga_dict["device"],
-                         "save_fig_path": "results/attacks/finetuning/diction/" + cf_mlp_riga_dict[
+                         "save_fig_path": "results/attacks/finetuning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_diction_" + cf_mlp_riga_dict["architecture"].lower(),
                          "y_label": "BER/ACC",
                          "show_acc_epoch": False
                          }
 
+#### *********************************Pruning attack************************************
 cf_mlp_riga_attack_pr = {"configuration": cf_mlp_riga_dict,
                          "database": cf_mlp_riga_dict["database"],
                          "path_model": cf_mlp_riga_embed["save_path"],
                          "watermark_size": watermark_size,
                          "criterion": cf_mlp_riga_dict["criterion"],
-                         "save_path": "results/attacks/pruning/diction/" + cf_mlp_riga_dict[
+                         "save_path": "results/attacks/pruning/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "architecture": cf_mlp_riga_dict["architecture"],
                          "device": cf_mlp_riga_dict["device"],
                          }
 
+#### *********************************overwriting attack************************************
 epoch_attack = 40
 watermark_size = 512
 epoch_check = 10
 save_path_attack = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epoch_attack) \
                    + "_epc" + str(epoch_check)
-
 cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_embed,
                          "database": cf_mlp_riga_embed["database"],
                          "path_model": cf_mlp_riga_embed["save_path"],
@@ -663,20 +754,21 @@ cf_mlp_riga_attack_ow = {"configuration": cf_mlp_riga_embed,
                          "wd": 1e-4,
                          "scheduler": "MultiStepLR",
                          "architecture": cf_mlp_riga_dict["criterion"],
-                         "save_path": "results/attacks/overwriting/diction/" + cf_mlp_riga_dict[
+                         "save_path": "results/attacks/overwriting/" + method_wat + "/" + cf_mlp_riga_dict[
                              "architecture"].lower() + "/" + save_path_attack + ".pth",
                          "momentum": 0,
                          "milestones": [20, 30],
                          "gamma": 0.1,
                          "criterion": cf_mlp_riga_embed["criterion"],
                          "device": cf_mlp_riga_embed["device"],
-                         "save_fig_path": "results/attacks/overwriting/diction/" + cf_mlp_riga_embed[
+                         "save_fig_path": "results/attacks/overwriting/" + method_wat + "/" + cf_mlp_riga_embed[
                              "architecture"].lower() + "/" + save_path_attack + ".png",
                          "x_label": "Partition_diction_" + cf_mlp_riga_embed["architecture"].lower(),
                          "y_label": "BER/ACC",
                          "show_acc_epoch": False
                          }
 
+#### *********************************PIA attack************************************
 cf_non_watermarked = deepcopy(cf_mlp_riga_dict)
 cf_non_watermarked["epochs"] = 2
 cf_non_watermarked["show_acc_epoch"] = False
@@ -689,7 +781,46 @@ save_path_attack = "_l" + layer_name[0] + "_wat" + str(
 
 cf_mlp_riga_attack_pia = {"train_non_watermarked": cf_non_watermarked,
                           "train_watermarked": cf_watermarked,
-                          "save_path": "results/attacks/pia/diction/" + cf_mlp_riga_dict[
+                          "save_path": "results/attacks/pia/" + method_wat + "/" + cf_mlp_riga_dict[
                               "architecture"].lower() + "/" + save_path_attack + ".pth",
                           "nb_examples": nb_examples
                           }
+
+### ****************************Dummy neurons attack***************************************
+layer_name="fc1"
+num_dummy=2
+attack_type="neuron_clique"
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
+
+cf_mlp_riga_attack_dummy_neurons = {
+    "configuration": cf_mlp_riga_dict,
+    "database": cf_mlp_riga_dict["database"],
+    "path_model": cf_mlp_riga_embed["save_path"],
+    "save_path": "results/attacks/dummy_neurons/" + method_wat + "/" + cf_mlp_riga_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_mlp_riga_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "num_dummy": 2, # if neuron_clique
+    "neuron_idx": 10, # if neuron_split
+    "num_splits": 2 # if neuron_split
+}
+
+### **********************Distillation attack************************
+layer_name="fc1"
+attack_type="logits"
+epoch_attack = 20
+save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type) + "_epochs_" + str(epoch_attack)
+
+cf_mlp_riga_attack_distillation = {
+    "configuration": cf_mlp_riga_dict,
+    "database": cf_mlp_riga_dict["database"],
+    "path_model": cf_mlp_riga_attack_dummy_neurons["save_path"],
+    "save_path": "results/attacks/distillation/" + method_wat + "/" + cf_mlp_riga_dict[
+        "architecture"].lower() + "/" + save_path_attack + ".pth",
+    "device":cf_mlp_riga_dict["device"],
+    "attack_type":attack_type,
+    "layer_name": layer_name,
+    "epoch_attack": epoch_attack
+
+}
