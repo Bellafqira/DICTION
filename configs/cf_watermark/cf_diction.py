@@ -177,8 +177,9 @@ cf_mlp_attack_pia = {"train_non_watermarked": cf_non_watermarked,
 
 ### *********************************Dummy neurons attack***************************************
 layer_name="fc2"
-num_dummy=2
-attack_type="neuron_clique"
+num_dummy=100
+num_splits=100
+attack_type="neuron_split"
 save_path_attack = "l_" + layer_name + "_attack_type_" + str(attack_type)
 
 cf_mlp_attack_dummy_neurons = {
@@ -190,9 +191,9 @@ cf_mlp_attack_dummy_neurons = {
     "device":cf_mlp_dict["device"],
     "attack_type":attack_type,
     "layer_name": layer_name,
-    "num_dummy": 2, # if neuron_clique
+    "num_dummy": num_dummy, # if neuron_clique
     "neuron_idx": 10, # if neuron_split
-    "num_splits": 2 # if neuron_split
+    "num_splits": num_splits # if neuron_split
 }
 
 ### *********************************Distillation attack************************
@@ -425,7 +426,7 @@ cf_cnn_attack_distillation = {
 watermark_size = 256
 epochs_embed = 1000
 epoch_check = 30
-layer_name = ["base.layer1.0.conv1"]
+layer_name = ["base.fc.0"]
 # layer1.0.conv1', layer3.1.conv1, view
 save_path_embed = "_l" + layer_name[0] + "_wat" + str(watermark_size) + "_ep" + str(epochs_embed) + "_epc" + \
                   str(epoch_check)

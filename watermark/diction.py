@@ -126,7 +126,7 @@ def embed(init_model, test_loader, train_loader, config) -> object:
             y_pred = model(x_train)
             l_main_task = criterion(y_pred, y_train)
 
-            l_model = l_main_task + config["lambda_acts"]*MSELoss(reduction='mean')(Util._get_act(extractor_wat(x_train)), Util._get_act(extractor_orig(x_train)))
+            l_model = l_main_task + config["lambda_proj"]*l_wat # + config["lambda_acts"]*MSELoss(reduction='mean')(Util._get_act(extractor_wat(x_train)), Util._get_act(extractor_orig(x_train)))
             # + Metric.coupling_regularization(model, init_model, lambda_coupling=config["lambda_mse"], p=2)
 
             l_proj.backward(retain_graph=True)
@@ -187,7 +187,6 @@ def extract(model_watermarked, supp):
     act = extractor(x_key.cuda())
     act = Util._get_act(act)
     act = act[:, supp["indices"]]
-
     wat_ext, ber = _extract(act.cuda(), supp["matrix_a"], supp["watermark"])
     return wat_ext, ber
 
@@ -196,7 +195,7 @@ def _extract(act, model, watermark):
     watermark_out = model(act)
     watermark_out = torch.mean(watermark_out, dim=0, keepdim=True)
     wat_ext, ber = _get_ber(watermark_out.cpu().detach().numpy(), watermark.cpu())
-    return wat_ext, ber
+    return watermark_out, ber
 
 
 def _get_ber(wat_out, watermark):

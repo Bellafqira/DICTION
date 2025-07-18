@@ -2,7 +2,7 @@
 
 methods=("DICTION") # values: ("DICTION", "DEEPSIGNS", "UCHIDA", "RES_ENCRYPT", "HUFUNET")
 models=("RESNET18") # values: ("MLP" "CNN" "RESNET18" "MLP_RIGA")
-operations=("DISTILLATION") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA" "DUMMY_NEURONS" "DISTILLATION")
+operations=("DUMMY_NEURONS" "DISTILLATION") # values: ("TRAIN" "WATERMARKING" "PRUNING" "OVERWRITING" "FINE_TUNING" "SHOW" "PIA" "DUMMY_NEURONS" "DISTILLATION")
 
 for method in "${methods[@]}"; do
     for model in "${models[@]}"; do

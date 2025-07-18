@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.nn import BCELoss
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
@@ -46,7 +47,7 @@ def train_student(student, teacher, loader, temperature=2.0, lr=1e-3, epochs=3, 
             log_p_student = F.log_softmax(student_logits / temperature, dim=1)
 
             # Cross-entropy between teacher and student distributions
-            # loss_1 = F.kl_div(log_p_student, p_teacher, reduction='batchmean') * (temperature ** 2)
+            # loss_1 = F.kl_div(log_p_student, p_teacher, reduction='batchmean') * (temperature ** 1)
             loss_1 = F.mse_loss(F.sigmoid(student_logits), F.sigmoid(teacher_logits))
             # loss_2 = F.mse_loss(s, t)
             loss =  loss_1
@@ -57,11 +58,14 @@ def train_student(student, teacher, loader, temperature=2.0, lr=1e-3, epochs=3, 
             total += labels.size(0)
             correct += predicted.eq(labels).sum().item()
 
-            _, ber_student = extract(student, supp)
+            wat_ext, ber_student = extract(student, supp)
             _, ber_teacher = extract(teacher, supp)
+
+            error_wat = BCELoss(reduction='mean')(wat_ext.to('cpu'), supp["watermark"].to('cpu'))
 
             loop.set_description(f"Epoch [{epoch}/{epochs}]")
             loop.set_postfix(loss=train_loss / (batch_idx + 1), acc=100. * correct / total,
-                             correct_total=f"[{correct}"f"/{total}]", ber_student=f"{ber_student:4f}", ber_teacher=f"{ber_teacher:4f}")
+                             correct_total=f"[{correct}"f"/{total}]", ber_student=f"{ber_student:4f}",
+                             ber_teacher=f"{ber_teacher:4f}", error_wat=f"{error_wat:.4f}")
 
     return student.state_dict()
